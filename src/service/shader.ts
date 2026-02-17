@@ -1,5 +1,6 @@
 import * as BABYLON from "@babylonjs/core";
 import * as monaco from "monaco-editor";
+import * as prettier from "prettier";
 
 type BabylonHandle = {
   dispose: () => void;
@@ -273,84 +274,34 @@ export class MonacoShaderEditor {
     } catch (e) {}
 
     this.initEditor(container, initialCode, onChange);
-
-    // Register formatting action for GLSL after editor is created
-    try {
-      this.monacoEditor.addAction({
-        id: "format-glsl",
-        label: "Format GLSL",
-        keybindings: [
-          // macOS: Shift+Option+F, Windows/Linux: Shift+Alt+F
-          monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
-        ],
-        contextMenuGroupId: "navigation",
-        contextMenuOrder: 1.5,
-        run: (ed: monaco.editor.ICodeEditor) => {
-          // this.formatCode(ed);
-          console.log("formatting code...");
-          this.monacoEditor.getAction("editor.action.formatDocument")?.run();
-        },
-      });
-    } catch (e) {}
   }
 
-  // GLSL formatter with general formatting rules
-  formatCode(editor: monaco.editor.ICodeEditor) {
+  // GLSL formatter using prettier
+  async formatCode(editor: monaco.editor.ICodeEditor) {
     const model = editor.getModel();
     if (!model) return;
 
-    let code = model.getValue();
+    const code = model.getValue();
 
-    // Step 1: Remove trailing whitespace and normalize line endings
-    code = code
-      .split("\n")
-      .map((line) => line.trimEnd())
-      .join("\n");
-
-    // Step 2: Add newline after { (but not for struct declarations)
-    code = code.replace(/(\S[^{}]*)\{/g, "$1{\n");
-
-    // Step 3: Add newline before }
-    code = code.replace(/\}(?=\S)/g, "\n}");
-
-    // Step 4: Add newline after ; for statements (avoid for/if/while conditions)
-    code = code.replace(
-      /;(?!\s*(?:if|else|for|while|return|discard)\b)/g,
-      ";\n",
-    );
-
-    // Step 5: Remove multiple consecutive empty lines
-    code = code.replace(/\n{3,}/g, "\n\n");
-
-    // Step 6: Trim overall
-    code = code.trim();
-
-    // Step 7: Add proper indentation (basic)
-    const lines = code.split("\n");
-    let indentLevel = 0;
-    const formattedLines = lines.map((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) return "";
-
-      // Decrease indent before }
-      if (trimmed.startsWith("}")) {
-        indentLevel = Math.max(0, indentLevel - 1);
+    try {
+      // Try to format using prettier with JavaScript parser as fallback
+      // GLSL is similar to C/JavaScript in structure
+      const formatted = await prettier.format(code, {
+        parser: "glsl",
+        plugins: [],
+      });
+      editor.setValue(formatted);
+    } catch {
+      // If glsl parser not available, try with JavaScript parser
+      try {
+        const formatted = await prettier.format(code, {
+          parser: "babel",
+        });
+        editor.setValue(formatted);
+      } catch (e) {
+        console.warn("Failed to format code with prettier:", e);
       }
-
-      const result = "  ".repeat(indentLevel) + trimmed;
-
-      // Increase indent after {
-      if (trimmed.endsWith("{")) {
-        indentLevel++;
-      }
-
-      return result;
-    });
-
-    code = formattedLines.join("\n");
-
-    // Apply the formatted code
-    editor.setValue(code);
+    }
 
     // Trigger change event
     const listener = editor.onDidChangeModelContent(() => {
@@ -379,6 +330,20 @@ export class MonacoShaderEditor {
           const code = this.monacoEditor.getValue();
           onChange && onChange(code);
         } catch (e) {}
+      });
+
+      // Register format action using prettier
+      this.monacoEditor.addAction({
+        id: "format-glsl",
+        label: "Format",
+        keybindings: [
+          monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
+        ],
+        contextMenuGroupId: "navigation",
+        contextMenuOrder: 1.5,
+        run: () => {
+          this.formatCode(this.monacoEditor);
+        },
       });
     } catch (e) {}
   }
