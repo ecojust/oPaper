@@ -95,7 +95,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  onActivated,
+  onDeactivated,
+  computed,
+} from "vue";
 import Panel from "@/service/panel";
 import { IntervalCorn } from "@/service/corn";
 import { ElMessage } from "element-plus";
@@ -201,6 +208,10 @@ const handleDownloadCurrent = async () => {
 
 // update corn timer
 const updateCorn = () => {
+  // ensure any existing corn is stopped before creating a new one
+  corn && corn.stop();
+  corn = null;
+
   if (loopEnabled.value && config.value.mode === "static") {
     corn = new IntervalCorn(() => {
       if (!loopEnabled.value || config.value.mode !== "static") {
@@ -224,7 +235,9 @@ const updateCorn = () => {
         console.log("触发loop，从云端切换壁纸:");
         fetchRandomImage();
       }
-    }, 30);
+    }, 5);
+    // start the underlying scheduler so the registered task runs
+    // corn.start();
   }
 };
 
@@ -289,6 +302,17 @@ const handleDeleteWallpaper = async (wallpaper) => {
 onMounted(() => {
   readConfig();
   readLocalStaticWallpapers();
+});
+
+onActivated(() => {
+  readConfig();
+  readLocalStaticWallpapers();
+});
+
+onDeactivated(() => {
+  console.log("Stage组件失活，停止corn");
+  corn && corn.stop();
+  corn = null;
 });
 
 onUnmounted(() => {

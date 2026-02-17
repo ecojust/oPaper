@@ -27,6 +27,11 @@
     "@babel/helper-string-parser" "^7.27.1"
     "@babel/helper-validator-identifier" "^7.28.5"
 
+"@babylonjs/core@^6.0.0":
+  version "6.49.0"
+  resolved "https://registry.npmmirror.com/@babylonjs/core/-/core-6.49.0.tgz#eea3c912a0b30c04e8aac8795181dd1bb81b86bc"
+  integrity sha512-jU/JyqebRqqziNwHLcBYzANrVRd9S55yNZEjejwg2p4I8NRnoBBNgf4wuUVw17UKNHc1v3KD/Vnr5C2+dIWAqQ==
+
 "@ctrl/tinycolor@^3.4.1":
   version "3.6.1"
   resolved "https://registry.npmmirror.com/@ctrl/tinycolor/-/tinycolor-3.6.1.tgz"

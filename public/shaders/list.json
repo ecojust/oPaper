@@ -1,0 +1,12 @@
+[
+  {
+    "name": "plasma.frag",
+    "title": "Plasma",
+    "path": "/shaders/plasma.frag"
+  },
+  {
+    "name": "simple_color.frag",
+    "title": "Simple Color",
+    "path": "/shaders/simple_color.frag"
+  }
+]

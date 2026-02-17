@@ -11,28 +11,29 @@ interface IWallpaper {
 
 export default class Panel {
   static async readLocalStaticWallpapers() {
-    const images = await invoke("read_wallpaper_static");
-    let wallpapers: IWallpaper[] = [];
-    if (images && Array.isArray(images)) {
-      wallpapers = images.map((imagePath, index) => {
-        const fileUrl = convertFileSrc(imagePath);
-        return {
-          id: `local-${imagePath}`,
-          title: imagePath.split("/").pop() || `本地图片 ${index + 1}`,
-          thumbnail: fileUrl,
-          url: imagePath,
-          author: "本地图片",
-        };
-      });
+    try {
+      const images = await invoke("read_wallpaper_static");
+      let wallpapers: IWallpaper[] = [];
+      if (images && Array.isArray(images)) {
+        wallpapers = images.map((imagePath, index) => {
+          const fileUrl = convertFileSrc(imagePath);
+          return {
+            id: `local-${imagePath}`,
+            title: imagePath.split("/").pop() || `本地图片 ${index + 1}`,
+            thumbnail: fileUrl,
+            url: imagePath,
+            author: "本地图片",
+          };
+        });
+      }
+      wallpapers = wallpapers.sort((a, b) =>
+        b.title.localeCompare(a.title) > 0 ? 1 : -1,
+      );
+      return wallpapers;
+    } catch (error) {
+      console.log("读取本地图片失败: " + error);
+      return [];
     }
-    wallpapers = wallpapers.sort((a, b) =>
-      b.title.localeCompare(a.title) > 0 ? 1 : -1,
-    );
-    return wallpapers;
-  }
-  catch(e: any) {
-    console.log("读取本地图片失败: " + e);
-    return [];
   }
 
   static async readConfig() {

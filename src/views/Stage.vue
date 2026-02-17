@@ -3,27 +3,36 @@
     <div class="stage-header">
       <el-tabs v-model="activeTab" class="stage-tabs">
         <el-tab-pane label="静态壁纸" name="static" />
-        <!-- <el-tab-pane label="Shader壁纸" name="shader" />
-        <el-tab-pane label="三维壁纸" name="3d" /> -->
+        <el-tab-pane label="Shader壁纸" name="shader" />
+        <!-- <el-tab-pane label="三维壁纸" name="3d" /> -->
         <!-- <el-tab-pane label="在线壁纸" name="online" /> -->
       </el-tabs>
     </div>
     <div class="stage-content">
-      <StaticWallpaper v-if="activeTab === 'static'" />
-      <ShaderWallpaper v-if="activeTab === 'shader'" />
-      <ThreeDWallpaper v-if="activeTab === '3d'" />
+      <keep-alive>
+        <component :is="activeComponent" />
+      </keep-alive>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import StaticWallpaper from "./StaticWallpaper.vue";
-import ShaderWallpaper from "./ShaderWallpaper.vue";
-import ThreeDWallpaper from "./ThreeDWallpaper.vue";
-import OnlineWallpaper from "./OnlineWallpaper.vue";
+import { ref, computed } from "vue";
+import StaticWallpaper from "./wallpaperSettings/StaticWallpaper.vue";
+import ShaderWallpaper from "./wallpaperSettings/ShaderWallpaper.vue";
+import ThreeDWallpaper from "./wallpaperSettings/ThreeDWallpaper.vue";
+import OnlineWallpaper from "./wallpaperSettings/OnlineWallpaper.vue";
 
 const activeTab = ref("static");
+
+const components = {
+  static: StaticWallpaper,
+  shader: ShaderWallpaper,
+  "3d": ThreeDWallpaper,
+  online: OnlineWallpaper,
+};
+
+const activeComponent = computed(() => components[activeTab.value] || null);
 </script>
 
 <style lang="less" scoped>
