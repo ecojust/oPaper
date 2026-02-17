@@ -1,0 +1,72 @@
+name: Build and release
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  oPaper:
+    permissions:
+      contents: write
+      actions: write
+      attestations: write
+      deployments: write
+      packages: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "macos-latest" # for Arm based macs (M1 and above).
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-latest" # for Intel based macs.
+            args: "--target x86_64-apple-darwin"
+          - platform: "windows-latest"
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Rust setup
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      # 为Intel Mac安装目标架构 (仅在对应平台执行)
+      - name: Install x86 Apple target
+        if: matrix.args == '--target x86_64-apple-darwin'
+        run: rustup target add x86_64-apple-darwin
+
+      # Rust cache
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+
+      # Sync node version and setup cache
+      - name: Sync node version and setup cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      # Install pnpm globally
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      # Install frontend dependencies
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      # Build the app
+      - name: Build the app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v-__VERSION__
+          releaseName: "oPaper  v__VERSION__"
+          releaseBody: "See the assets to download and install this version."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
