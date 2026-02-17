@@ -1,4 +1,5 @@
 import * as BABYLON from "@babylonjs/core";
+import * as monaco from "monaco-editor";
 
 type BabylonHandle = {
   dispose: () => void;
@@ -159,6 +160,119 @@ export function initBabylon(
   return { dispose, updateCode };
 }
 
+export class MonacoShaderEditor {
+  private monacoEditor: monaco.editor.IStandaloneCodeEditor = null as any;
+  private monacoModel: monaco.editor.ITextModel = null as any;
+
+  constructor(
+    container: HTMLElement,
+    initialCode: string,
+    onChange: (code: string) => void,
+  ) {
+    try {
+      monaco.languages.register({ id: "glsl" });
+      monaco.languages.setMonarchTokensProvider("glsl", {
+        defaultToken: "",
+        tokenPostfix: ".glsl",
+        keywords: ["if", "else", "for", "while", "return", "discard"],
+        types: [
+          "float",
+          "int",
+          "bool",
+          "void",
+          "vec2",
+          "vec3",
+          "vec4",
+          "mat3",
+          "mat4",
+          "sampler2D",
+        ],
+        symbols: /[=><!~?:&|+\-*\/%^]+/,
+        tokenizer: {
+          root: [
+            [/\/\/.*$/, "comment"],
+            [/\/\*/, "comment", "@comment"],
+            [/#\s*[a-zA-Z_][\w]*/, "keyword"],
+            [/[a-zA-Z_][\w]*(?=\s*\()/, "identifier"],
+            [
+              /[a-zA-Z_][\w]*/,
+              {
+                cases: {
+                  "@keywords": "keyword",
+                  "@types": "type",
+                  "@default": "identifier",
+                },
+              },
+            ],
+            [/\d+\.\d+([eE][\-+]?\d+)?/, "number.float"],
+            [/\d+/, "number"],
+            [/[{}()\[\]]/, "delimiter"],
+            [/[,;.]/, "delimiter"],
+            [/@symbols/, "operator"],
+          ],
+          comment: [
+            [/[^/*]+/, "comment"],
+            [/\*\//, "comment", "@pop"],
+            [/[/*]/, "comment"],
+          ],
+        },
+      });
+    } catch (e) {}
+
+    try {
+      monaco.editor.defineTheme("shaderTheme", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [
+          { token: "comment", foreground: "6A9955" },
+          { token: "keyword", foreground: "569CD6" },
+          { token: "type", foreground: "4EC9B0" },
+          { token: "number", foreground: "B5CEA8" },
+          { token: "operator", foreground: "D4D4D4" },
+          { token: "identifier", foreground: "9CDCFE" },
+        ],
+        colors: { "editor.background": "#0f1724" },
+      });
+    } catch (e) {}
+
+    this.initEditor(container, initialCode, onChange);
+  }
+
+  initEditor(
+    container: HTMLElement,
+    initialCode: string,
+    onChange: (code: string) => void,
+  ) {
+    try {
+      this.monacoModel = monaco.editor.createModel(initialCode, "glsl");
+      this.monacoEditor = monaco.editor.create(container, {
+        model: this.monacoModel,
+        theme: "shaderTheme",
+        automaticLayout: true,
+        minimap: { enabled: false },
+        fontSize: 13,
+        wordWrap: "on",
+      });
+      this.monacoEditor.onDidChangeModelContent(() => {
+        try {
+          const code = this.monacoEditor.getValue();
+          onChange && onChange(code);
+        } catch (e) {}
+      });
+    } catch (e) {}
+  }
+
+  dispose() {
+    try {
+      this.monacoEditor.dispose();
+    } catch (e) {}
+    try {
+      this.monacoModel.dispose();
+    } catch (e) {}
+  }
+}
+
 export default {
   initBabylon,
+  MonacoShaderEditor,
 };

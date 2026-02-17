@@ -39,11 +39,13 @@
             <div class="right">
               <el-button @click="saveShader" type="primary">保存</el-button>
               <el-divider />
-              <el-input type="textarea" :rows="20" v-model="currentCode" />
+              <div ref="monacoContainer" class="monaco-editor" />
             </div>
           </div>
         </div>
       </transition>
+      <!-- hidden singleton mount for Monaco editor (keeps editor DOM alive) -->
+      <div ref="monacoRoot" style="display: none"></div>
     </div>
   </div>
 </template>
@@ -53,14 +55,17 @@ import { ref, onMounted, nextTick, onBeforeUnmount } from "vue";
 import { ElButton, ElDivider, ElInput, ElIcon } from "element-plus";
 import { ArrowLeft } from "@element-plus/icons-vue";
 
-import { initBabylon } from "@/service/shader";
+import { initBabylon, MonacoShaderEditor } from "@/service/shader";
 
 const shaders = ref([]);
 const loading = ref(true);
 const view = ref("list"); // 'list' | 'detail'
 const currentShader = ref(null);
+const monacoContainer = ref(null);
 const currentCode = ref("");
 let babylonHandle = null;
+let monacoEditor = null;
+
 const defaultCover =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300"><rect width="100%" height="100%" fill="%23111"/><text x="50%25" y="50%25" fill="%23fff" font-size="20" font-family="Arial" text-anchor="middle" alignment-baseline="middle">No cover</text></svg>';
 
@@ -92,6 +97,17 @@ const openDetail = async (item) => {
         console.error("init babylon failed", e);
       }
     }
+    // initialize or reuse a singleton Monaco editor (dynamically import)
+    const container = monacoContainer.value;
+    if (container) {
+      monacoEditor = new MonacoShaderEditor(
+        container,
+        currentCode.value,
+        (code) => {
+          currentCode.value = code;
+        },
+      );
+    }
   });
 };
 
@@ -117,11 +133,16 @@ onBeforeUnmount(() => {
 });
 
 const goBack = () => {
-  // dispose babylon and return to list view
   try {
     babylonHandle && babylonHandle.dispose && babylonHandle.dispose();
   } catch (e) {}
   babylonHandle = null;
+
+  try {
+    monacoEditor && monacoEditor.dispose && monacoEditor.dispose();
+  } catch (e) {}
+  monacoEditor = null;
+
   view.value = "list";
 };
 </script>
@@ -236,6 +257,10 @@ const goBack = () => {
       .right {
         width: 45%;
         padding-left: 16px;
+        .monaco-editor {
+          height: calc(100vh - 200px);
+          border: 1px solid #e6e6e6;
+        }
       }
     }
   }
