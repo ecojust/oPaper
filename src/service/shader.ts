@@ -1,3 +1,8 @@
+import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { sleep } from "@/utils/util";
+import Config from "@/service/config";
+
 import * as BABYLON from "@babylonjs/core";
 import * as monaco from "monaco-editor";
 import * as prettier from "prettier";
@@ -346,6 +351,61 @@ export class MonacoShaderEditor {
     try {
       this.monacoModel.dispose();
     } catch (e) {}
+  }
+}
+
+export class Shader {
+  static async readConfig() {
+    return await Config.readConfig();
+  }
+
+  static async saveConfig(updates: Record<string, any>) {
+    await Config.saveConfig(updates);
+  }
+
+  static async setShaderBackground(path: string, lastConfig = {}) {
+    try {
+      await invoke("set_config", {
+        content: JSON.stringify({
+          ...lastConfig,
+          mode: "shader",
+          shaderPath: path,
+        }),
+      });
+    } catch (e) {
+      console.log("set_shader_wallpaper_from_path: " + e);
+    }
+    await invoke("create_animation_wallpaper", {
+      type: "shader",
+    });
+    // create_animation_wallpaper
+  }
+
+  static async saveShaderBackground(
+    title: string,
+    code: string,
+    thumbnail: string,
+  ) {
+    //
+  }
+
+  static async getLocalShaderList() {
+    try {
+      const folders = await invoke("read_wallpaper_shader");
+      if (folders instanceof Array === false) {
+        throw new Error("Expected an array from read_wallpaper_shader");
+      }
+      console.log("Local shader list:", folders);
+      return folders.map((folderPath: any, index: number) => ({
+        id: `${folderPath}`,
+        title: folderPath.split("/").pop() || `本地图片 ${index + 1}`,
+        thumbnail: convertFileSrc(`${folderPath}/index.png`),
+        url: convertFileSrc(`${folderPath}/index.glsl`),
+      }));
+    } catch (e) {
+      console.log("Failed to read local shader list: " + e);
+      return [];
+    }
   }
 }
 

@@ -3,15 +3,17 @@
 use tauri::Manager;
 
 #[cfg(target_os = "windows")]
-pub fn set_window_to_desktop(window: &tauri::WebviewWindow) -> Result<(), Box<dyn std::error::Error>> {
-    use std::os::windows::ffi::OsStrExt;
+pub fn set_window_to_desktop(
+    window: &tauri::WebviewWindow,
+) -> Result<(), Box<dyn std::error::Error>> {
     use std::ffi::OsStr;
-    use winapi::um::winuser::{FindWindowW, SetParent, SendMessageW};
+    use std::os::windows::ffi::OsStrExt;
     use winapi::shared::minwindef::LPARAM;
-    
+    use winapi::um::winuser::{FindWindowW, SendMessageW, SetParent};
+
     let hwnd = window.hwnd()?;
     let hwnd = hwnd.0 as winapi::shared::windef::HWND;
-    
+
     unsafe {
         // 查找 Progman 窗口
         let progman: Vec<u16> = OsStr::new("Progman")
@@ -19,7 +21,7 @@ pub fn set_window_to_desktop(window: &tauri::WebviewWindow) -> Result<(), Box<dy
             .chain(std::iter::once(0))
             .collect();
         let progman_hwnd = FindWindowW(progman.as_ptr(), std::ptr::null());
-        
+
         if !progman_hwnd.is_null() {
             // 发送消息激活 WorkerW 窗口（桌面图标的父窗口）
             SendMessageW(
@@ -28,25 +30,25 @@ pub fn set_window_to_desktop(window: &tauri::WebviewWindow) -> Result<(), Box<dy
                 0,
                 0 as LPARAM,
             );
-            
+
             // 查找 WorkerW 窗口（在桌面图标下方）
             let mut workerw_hwnd: winapi::shared::windef::HWND = std::ptr::null_mut();
             winapi::um::winuser::EnumWindows(
                 Some(enum_windows_callback),
                 &mut workerw_hwnd as *mut _ as isize,
             );
-            
+
             // 如果找到 WorkerW，将窗口设置为其子窗口，否则使用 Progman
             let parent = if !workerw_hwnd.is_null() {
                 workerw_hwnd
             } else {
                 progman_hwnd
             };
-            
+
             SetParent(hwnd, parent);
         }
     }
-    
+
     Ok(())
 }
 
@@ -55,17 +57,22 @@ unsafe extern "system" fn enum_windows_callback(
     hwnd: winapi::shared::windef::HWND,
     lparam: isize,
 ) -> i32 {
-    use winapi::um::winuser::{FindWindowExW, GetWindow};
-    use std::os::windows::ffi::OsStrExt;
     use std::ffi::OsStr;
-    
+    use std::os::windows::ffi::OsStrExt;
+    use winapi::um::winuser::{FindWindowExW, GetWindow};
+
     let shelldll: Vec<u16> = OsStr::new("SHELLDLL_DefView")
         .encode_wide()
         .chain(std::iter::once(0))
         .collect();
-    
-    let shelldll_hwnd = FindWindowExW(hwnd, std::ptr::null_mut(), shelldll.as_ptr(), std::ptr::null());
-    
+
+    let shelldll_hwnd = FindWindowExW(
+        hwnd,
+        std::ptr::null_mut(),
+        shelldll.as_ptr(),
+        std::ptr::null(),
+    );
+
     if !shelldll_hwnd.is_null() {
         // 找到包含 SHELLDLL_DefView 的 WorkerW
         let workerw = GetWindow(hwnd, 3); // GW_HWNDNEXT
@@ -74,85 +81,89 @@ unsafe extern "system" fn enum_windows_callback(
             return 0; // 停止枚举
         }
     }
-    
+
     1 // 继续枚举
 }
 
 #[cfg(target_os = "macos")]
-pub fn set_window_to_desktop(window: &tauri::WebviewWindow) -> Result<(), Box<dyn std::error::Error>> {
+pub fn set_window_to_desktop(
+    window: &tauri::WebviewWindow,
+) -> Result<(), Box<dyn std::error::Error>> {
     use cocoa::appkit::{NSWindow, NSWindowCollectionBehavior};
     use cocoa::base::{id, NO, YES};
     use cocoa::foundation::NSInteger;
-    
+
     let ns_window = window.ns_window()? as id;
-    
+
     unsafe {
         // 设置窗口层级到桌面级别
         let desktop_level: NSInteger = -2147483648 + 30;
         ns_window.setLevel_(desktop_level);
-        
+
         println!("macOS: Set window level to {}", desktop_level);
-        
+
         // 设置窗口行为
-        let collection_behavior = NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
-            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
-            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle;
+        let collection_behavior =
+            NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
+                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
+                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle;
         ns_window.setCollectionBehavior_(collection_behavior);
-        
+
         // 禁用窗口阴影
         ns_window.setHasShadow_(NO);
-        
+
         // 忽略鼠标事件
         ns_window.setIgnoresMouseEvents_(YES);
-        
+
         // 设置窗口透明度
         ns_window.setOpaque_(YES);
         ns_window.setAlphaValue_(1.0);
     }
-    
+
     Ok(())
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-pub fn set_window_to_desktop(_window: &tauri::WebviewWindow) -> Result<(), Box<dyn std::error::Error>> {
+pub fn set_window_to_desktop(
+    _window: &tauri::WebviewWindow,
+) -> Result<(), Box<dyn std::error::Error>> {
     Err("Platform not supported".into())
 }
 
 /// 创建动态壁纸窗口
 pub fn create_animation_window(
     app: &tauri::AppHandle,
+    wall_type: String,
 ) -> Result<tauri::WebviewWindow, Box<dyn std::error::Error>> {
     // 获取主显示器尺寸
     let monitor = app.primary_monitor()?.ok_or("No primary monitor found")?;
     let screen_size = monitor.size();
     let scale_factor = monitor.scale_factor();
-    
+
     // 物理像素尺寸
     let physical_width = screen_size.width as f64;
     let physical_height = screen_size.height as f64;
-    
+
     // 逻辑像素尺寸（除以缩放因子）
     let logical_width = physical_width / scale_factor;
     let logical_height = physical_height / scale_factor;
-    
+
     println!("Physical size: {}x{}", physical_width, physical_height);
     println!("Scale factor: {}", scale_factor);
     println!("Logical size: {}x{}", logical_width, logical_height);
-    
+
     // 创建 background 窗口，使用逻辑尺寸
-    let background_window = tauri::WebviewWindowBuilder::new(
-        app,
-        "background",
-        tauri::WebviewUrl::App("index.html/#/background".into())
-    )
-    .title("background")
-    .position(0.0, 0.0)
-    .inner_size(logical_width, logical_height)
-    .decorations(false)
-    .skip_taskbar(true)
-    .focused(false)
-    .visible(true)
-    .build()?;
+    let url = format!("index.html/#/background?wall_type={}", wall_type);
+    let background_window =
+        tauri::WebviewWindowBuilder::new(app, "background", tauri::WebviewUrl::App(url.into()))
+            .title("background")
+            .position(0.0, 0.0)
+            .inner_size(logical_width, logical_height)
+            .decorations(false)
+            .skip_taskbar(true)
+            .focused(false)
+            .visible(true)
+            .build()?;
 
     println!("Background window created successfully");
 
@@ -169,12 +180,17 @@ pub fn create_animation_window(
 
 /// Tauri 命令：初始化动态壁纸
 #[tauri::command]
-pub fn create_animation_wallpaper(app: tauri::AppHandle) -> Result<String, String> {
+pub fn create_animation_wallpaper(
+    app: tauri::AppHandle,
+    wall_type: String,
+) -> Result<String, String> {
     if let Some(window) = app.get_webview_window("background") {
-        window.close().map_err(|e| format!("Failed to close window: {}", e))?;
+        window
+            .close()
+            .map_err(|e| format!("Failed to close window: {}", e))?;
     }
-    
-    match create_animation_window(&app) {
+
+    match create_animation_window(&app, wall_type) {
         Ok(_) => Ok("Animation wallpaper initialized successfully".to_string()),
         Err(e) => Err(format!("Failed to initialize animation wallpaper: {}", e)),
     }
@@ -184,7 +200,9 @@ pub fn create_animation_wallpaper(app: tauri::AppHandle) -> Result<String, Strin
 #[tauri::command]
 pub fn destroy_animation_wallpaper(app: tauri::AppHandle) -> Result<String, String> {
     if let Some(window) = app.get_webview_window("background") {
-        window.close().map_err(|e| format!("Failed to close window: {}", e))?;
+        window
+            .close()
+            .map_err(|e| format!("Failed to close window: {}", e))?;
         Ok("Animation wallpaper destroyed successfully".to_string())
     } else {
         Err("Background window not found".to_string())
@@ -196,13 +214,13 @@ pub fn destroy_animation_wallpaper(app: tauri::AppHandle) -> Result<String, Stri
 // pub fn set_window_level(window: tauri::Window, level: i64) -> Result<String, String> {
 //     use cocoa::appkit::NSWindow;
 //     use cocoa::base::id;
-    
+
 //     let ns_window = window.ns_window().map_err(|e| e.to_string())? as id;
-    
+
 //     unsafe {
 //         ns_window.setLevel_(level);
 //     }
-    
+
 //     Ok(format!("Window level set to {}", level))
 // }
 

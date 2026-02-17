@@ -3,6 +3,7 @@ mod config;
 mod fetch;
 pub mod fs_helper;
 mod wallpaper_animation;
+mod wallpaper_shader;
 mod wallpaper_static;
 
 use config::{read_config, set_config};
@@ -10,6 +11,7 @@ use fetch::{fetch_json, fetch_request};
 use fs_helper::open_folder;
 
 use wallpaper_animation::{create_animation_wallpaper, destroy_animation_wallpaper};
+use wallpaper_shader::{delete_wallpaper_shader, read_wallpaper_shader};
 use wallpaper_static::{
     copy_wallpaper_to_wallpaper_static, delete_wallpaper_static, read_wallpaper_static,
     set_static_wallpaper_from_path, set_static_wallpaper_from_url,
@@ -29,16 +31,24 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            //fetch
             fetch_request,
             fetch_json,
+            //file
             open_folder,
+            //config
             read_config,
             set_config,
+            // wallpaper_static
             set_static_wallpaper_from_url,
             set_static_wallpaper_from_path,
             copy_wallpaper_to_wallpaper_static,
             read_wallpaper_static,
             delete_wallpaper_static,
+            // wallpaper_shader
+            read_wallpaper_shader,
+            delete_wallpaper_shader,
+            // wallpaper_animation:shader
             create_animation_wallpaper,
             destroy_animation_wallpaper
         ])

@@ -103,3 +103,34 @@ pub fn read_folder_files(path: String) -> Result<Vec<String>, String> {
 
     Ok(files)
 }
+
+#[tauri::command]
+pub fn read_folder_folders(path: String) -> Result<Vec<String>, String> {
+    // 确保目录存在
+    fs::create_dir_all(&path)
+        .map_err(|e| format!("Failed to create wallpaper_static directory: {}", e))?;
+
+    // 读取目录中的文件
+    let entries = fs::read_dir(&path)
+        .map_err(|e| format!("Failed to read wallpaper_static directory: {}", e))?;
+
+    let mut folders = Vec::new();
+
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
+        let path = entry.path();
+        // let file_name = entry.file_name();
+
+        // 只处理目录，跳过文件
+        if !path.is_file() {
+            if let Some(path_str) = path.to_str() {
+                folders.push(path_str.to_string());
+            }
+        }
+    }
+
+    // 按文件名排序
+    folders.sort();
+
+    Ok(folders)
+}

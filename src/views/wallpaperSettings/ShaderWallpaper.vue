@@ -6,7 +6,7 @@
           <div v-if="loading" class="loading">加载中...</div>
           <div v-else class="grid">
             <div v-for="item in shaders" :key="item.name" class="shader-item">
-              <div class="thumb" @click="openDetail(item)">
+              <div class="thumb" @click="setShaderBackground(item)">
                 <img :src="item.cover || defaultCover" class="cover-image" />
               </div>
               <div class="meta">
@@ -55,7 +55,7 @@ import { ref, onMounted, nextTick, onBeforeUnmount } from "vue";
 import { ElButton, ElDivider, ElInput, ElIcon } from "element-plus";
 import { ArrowLeft } from "@element-plus/icons-vue";
 
-import { initBabylon, MonacoShaderEditor } from "@/service/shader";
+import { initBabylon, MonacoShaderEditor, Shader } from "@/service/shader";
 
 const shaders = ref([]);
 const loading = ref(true);
@@ -63,6 +63,8 @@ const view = ref("list"); // 'list' | 'detail'
 const currentShader = ref(null);
 const monacoContainer = ref(null);
 const currentCode = ref("");
+const config = ref({});
+
 let babylonHandle = null;
 let monacoEditor = null;
 
@@ -71,9 +73,11 @@ const defaultCover =
 
 const fetchList = async () => {
   try {
-    const res = await fetch("/shaders/list.json");
-    const data = await res.json();
-    shaders.value = data;
+    const localShaders = Shader.getLocalShaderList(); // for debug
+    // console.log("Local shaders:", localShaders);
+    // const res = await fetch("/shaders/list.json");
+    // const data = await res.json();
+    shaders.value = localShaders;
   } catch (e) {
     console.error(e);
   } finally {
@@ -122,15 +126,15 @@ const saveShader = async () => {
   URL.revokeObjectURL(url);
 };
 
-onMounted(() => {
-  fetchList();
-});
-
-onBeforeUnmount(() => {
-  try {
-    babylonHandle && babylonHandle.dispose && babylonHandle.dispose();
-  } catch (e) {}
-});
+const setShaderBackground = (item) => {
+  //
+  const path = item.path;
+  Shader.setShaderBackground(path, {
+    // any additional config can go here
+    mode: "shader",
+  });
+  console.log("Set shader background:", item);
+};
 
 const goBack = () => {
   try {
@@ -145,6 +149,26 @@ const goBack = () => {
 
   view.value = "list";
 };
+
+// read config
+const readConfig = async () => {
+  try {
+    config.value = await Shader.readConfig();
+  } catch (e) {
+    console.error("read_config:", e);
+  }
+};
+
+onMounted(() => {
+  fetchList();
+  readConfig();
+});
+
+onBeforeUnmount(() => {
+  try {
+    babylonHandle && babylonHandle.dispose && babylonHandle.dispose();
+  } catch (e) {}
+});
 </script>
 
 <style lang="less">
