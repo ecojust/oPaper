@@ -1,7 +1,7 @@
 import * as BABYLON from "@babylonjs/core";
 import * as monaco from "monaco-editor";
 import * as prettier from "prettier";
-
+import glslParser from "prettier-plugin-glsl";
 type BabylonHandle = {
   dispose: () => void;
   updateCode?: (code: string) => void;
@@ -276,7 +276,7 @@ export class MonacoShaderEditor {
     this.initEditor(container, initialCode, onChange);
   }
 
-  // GLSL formatter using prettier
+  // GLSL formatter using prettier with glsl parser
   async formatCode(editor: monaco.editor.ICodeEditor) {
     const model = editor.getModel();
     if (!model) return;
@@ -284,23 +284,14 @@ export class MonacoShaderEditor {
     const code = model.getValue();
 
     try {
-      // Try to format using prettier with JavaScript parser as fallback
-      // GLSL is similar to C/JavaScript in structure
+      console.log("Formatting code with prettier...", prettier);
       const formatted = await prettier.format(code, {
-        parser: "glsl",
-        plugins: [],
+        parser: "glsl-parser",
+        plugins: [glslParser],
       });
       editor.setValue(formatted);
-    } catch {
-      // If glsl parser not available, try with JavaScript parser
-      try {
-        const formatted = await prettier.format(code, {
-          parser: "babel",
-        });
-        editor.setValue(formatted);
-      } catch (e) {
-        console.warn("Failed to format code with prettier:", e);
-      }
+    } catch (e) {
+      console.warn("Failed to format code with prettier:", e);
     }
 
     // Trigger change event
