@@ -73,7 +73,7 @@ const defaultCover =
 
 const fetchList = async () => {
   try {
-    const localShaders = Shader.getLocalShaderList(); // for debug
+    const localShaders = await Shader.getLocalShaderList(); // for debug
     // console.log("Local shaders:", localShaders);
     // const res = await fetch("/shaders/list.json");
     // const data = await res.json();

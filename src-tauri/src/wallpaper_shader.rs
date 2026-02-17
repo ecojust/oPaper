@@ -1,3 +1,4 @@
+use base64::Engine;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -36,7 +37,12 @@ pub fn read_wallpaper_shader() -> Result<Vec<String>, String> {
     Ok(folders)
 }
 
-fn save_shader(folder_name: String, glsl: String, thumbnail: String) -> Result<String, String> {
+#[tauri::command]
+pub fn save_wallpaper_shader(
+    folder_name: String,
+    glsl: String,
+    thumbnail: String,
+) -> Result<String, String> {
     // 获取当前可执行文件所在目录
     let exe_dir = std::env::current_exe()
         .map_err(|e| format!("Failed to get executable path: {}", e))?
@@ -51,8 +57,12 @@ fn save_shader(folder_name: String, glsl: String, thumbnail: String) -> Result<S
     let glsl_path = base_dir.join("shader.glsl");
     fs::write(&glsl_path, glsl).map_err(|e| format!("Failed to save glsl: {}", e))?;
 
+    // 解码 base64 并保存为 PNG 文件
     let thumbnail_path = base_dir.join("thumbnail.png");
-    fs::write(&thumbnail_path, thumbnail)
+    let thumbnail_bytes = base64::engine::general_purpose::STANDARD
+        .decode(&thumbnail)
+        .map_err(|e| format!("Failed to decode base64: {}", e))?;
+    fs::write(&thumbnail_path, thumbnail_bytes)
         .map_err(|e| format!("Failed to save thumbnail: {}", e))?;
 
     glsl_path

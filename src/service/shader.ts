@@ -363,6 +363,24 @@ export class Shader {
     await Config.saveConfig(updates);
   }
 
+  static async newDraft() {
+    return {
+      title: "draft-" + new Date().toISOString(),
+      code: `
+        precision highp float;
+        varying vec2 vUV;
+        uniform float iTime;
+        uniform vec2 iResolution;
+        void main(void) {
+          vec2 uv = vUV;
+          vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0.0,2.0,4.0));
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `,
+      thumbnail: "",
+    };
+  }
+
   static async setShaderBackground(path: string, lastConfig = {}) {
     try {
       await invoke("set_config", {
@@ -386,7 +404,23 @@ export class Shader {
     code: string,
     thumbnail: string,
   ) {
-    //
+    // thumbnail 是 base64 字符串，去掉前缀（如 "data:image/png;base64,"）
+    const base64Data = thumbnail.includes(",")
+      ? thumbnail.split(",")[1]
+      : thumbnail;
+
+    try {
+      const shaderPath = await invoke("save_wallpaper_shader", {
+        folderName: title,
+        glsl: code,
+        thumbnail: base64Data,
+      });
+      console.log("Shader saved to:", shaderPath);
+      return shaderPath;
+    } catch (e) {
+      console.error("Failed to save shader:", e);
+      throw e;
+    }
   }
 
   static async getLocalShaderList() {
@@ -399,8 +433,8 @@ export class Shader {
       return folders.map((folderPath: any, index: number) => ({
         id: `${folderPath}`,
         title: folderPath.split("/").pop() || `本地图片 ${index + 1}`,
-        thumbnail: convertFileSrc(`${folderPath}/index.png`),
-        url: convertFileSrc(`${folderPath}/index.glsl`),
+        thumbnail: convertFileSrc(`${folderPath}/thumbnail.png`),
+        url: convertFileSrc(`${folderPath}/shader.glsl`),
       }));
     } catch (e) {
       console.log("Failed to read local shader list: " + e);

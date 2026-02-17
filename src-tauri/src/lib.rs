@@ -11,7 +11,7 @@ use fetch::{fetch_json, fetch_request};
 use fs_helper::open_folder;
 
 use wallpaper_animation::{create_animation_wallpaper, destroy_animation_wallpaper};
-use wallpaper_shader::{delete_wallpaper_shader, read_wallpaper_shader};
+use wallpaper_shader::{delete_wallpaper_shader, read_wallpaper_shader, save_wallpaper_shader};
 use wallpaper_static::{
     copy_wallpaper_to_wallpaper_static, delete_wallpaper_static, read_wallpaper_static,
     set_static_wallpaper_from_path, set_static_wallpaper_from_url,
@@ -48,6 +48,7 @@ pub fn run() {
             // wallpaper_shader
             read_wallpaper_shader,
             delete_wallpaper_shader,
+            save_wallpaper_shader,
             // wallpaper_animation:shader
             create_animation_wallpaper,
             destroy_animation_wallpaper
