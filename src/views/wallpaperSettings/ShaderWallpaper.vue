@@ -7,10 +7,7 @@
           <div v-else class="grid">
             <div v-for="item in shaders" :key="item.name" class="shader-item">
               <div class="thumb" @click="openDetail(item)">
-                <canvas
-                  :id="`preview-${item.name}`"
-                  class="canvas-preview"
-                ></canvas>
+                <img :src="item.cover || defaultCover" class="cover-image" />
               </div>
               <div class="meta">
                 <h3>{{ item.title }}</h3>
@@ -56,18 +53,16 @@ import { ref, onMounted, nextTick, onBeforeUnmount } from "vue";
 import { ElButton, ElDivider, ElInput, ElIcon } from "element-plus";
 import { ArrowLeft } from "@element-plus/icons-vue";
 
-import * as BABYLON from "@babylonjs/core";
+import { initBabylon } from "@/service/shader";
 
 const shaders = ref([]);
 const loading = ref(true);
 const view = ref("list"); // 'list' | 'detail'
 const currentShader = ref(null);
 const currentCode = ref("");
-
-let engine = null;
-let scene = null;
-let camera = null;
-let material = null;
+let babylonHandle = null;
+const defaultCover =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300"><rect width="100%" height="100%" fill="%23111"/><text x="50%25" y="50%25" fill="%23fff" font-size="20" font-family="Arial" text-anchor="middle" alignment-baseline="middle">No cover</text></svg>';
 
 const fetchList = async () => {
   try {
@@ -78,49 +73,7 @@ const fetchList = async () => {
     console.error(e);
   } finally {
     loading.value = false;
-    // kick off small previews
-    nextTick(() => {
-      shaders.value.forEach((s) => mountPreviewCanvas(s));
-    });
-  }
-};
-
-const mountPreviewCanvas = async (item) => {
-  const canvas = document.getElementById(`preview-${item.name}`);
-  if (!canvas) return;
-  // simple WebGL fragment shader preview using raw gl for thumbnails
-  try {
-    const gl = canvas.getContext("webgl");
-    canvas.width = 300;
-    canvas.height = 150;
-    const frag = await fetch(item.path).then((r) => r.text());
-    // create simple shader program that runs the fragment shader
-    const vertSrc = `attribute vec2 position; void main(){ gl_Position = vec4(position,0.0,1.0); }`;
-    const vert = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vert, vertSrc);
-    gl.compileShader(vert);
-    const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragShader, frag);
-    gl.compileShader(fragShader);
-    const prog = gl.createProgram();
-    gl.attachShader(prog, vert);
-    gl.attachShader(prog, fragShader);
-    gl.linkProgram(prog);
-    gl.useProgram(prog);
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
-      gl.STATIC_DRAW,
-    );
-    const pos = gl.getAttribLocation(prog, "position");
-    gl.enableVertexAttribArray(pos);
-    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  } catch (e) {
-    console.warn("preview failed", e);
+    // covers are static images; no thumbnail init required
   }
 };
 
@@ -130,105 +83,15 @@ const openDetail = async (item) => {
   const code = await fetch(item.path).then((r) => r.text());
   currentCode.value = code;
   view.value = "detail";
-  nextTick(() => initBabylon());
-};
-
-const initBabylon = () => {
-  const canvas = document.getElementById("babylon-canvas");
-  if (!canvas) return;
-  engine = new BABYLON.Engine(canvas, true);
-  scene = new BABYLON.Scene(engine);
-  camera = new BABYLON.FreeCamera("cam", new BABYLON.Vector3(0, 0, -5), scene);
-  camera.setTarget(BABYLON.Vector3.Zero());
-  camera.attachControl(canvas, true);
-
-  const plane = BABYLON.MeshBuilder.CreatePlane(
-    "plane",
-    { width: 4, height: 2.25 },
-    scene,
-  );
-
-  // create custom shader material using Babylon's ShaderMaterial (official style)
-  try {
-    const shaderName = "customShader";
-
-    // vertex shader (uses worldViewProjection as Babylon provides)
-    BABYLON.Effect.ShadersStore[shaderName + "VertexShader"] = `
-      precision highp float;
-      // Attributes
-      attribute vec3 position;
-      attribute vec2 uv;
-      // Varyings
-      varying vec2 vUV;
-      // Uniforms provided by Babylon
-      uniform mat4 worldViewProjection;
-      void main(void) {
-        vUV = uv;
-        gl_Position = worldViewProjection * vec4(position, 1.0);
+  nextTick(() => {
+    const canvas = document.getElementById("babylon-canvas");
+    if (canvas) {
+      try {
+        babylonHandle = initBabylon(canvas, () => currentCode.value);
+      } catch (e) {
+        console.error("init babylon failed", e);
       }
-    `;
-
-    // fragment shader: use the loaded shader source if it looks like a fragment shader,
-    // otherwise use a simple default shader following Babylon's shader conventions
-    let fragSource =
-      currentCode.value && currentCode.value.includes("gl_FragColor")
-        ? currentCode.value
-        : `
-        precision highp float;
-        varying vec2 vUV;
-        uniform float iTime;
-        uniform vec2 iResolution;
-        void main(void) {
-          vec2 uv = vUV;
-          vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0.0,2.0,4.0));
-          gl_FragColor = vec4(col, 1.0);
-        }
-      `;
-
-    BABYLON.Effect.ShadersStore[shaderName + "FragmentShader"] = fragSource;
-
-    // create ShaderMaterial using Babylon official-style options
-    material = new BABYLON.ShaderMaterial(
-      "mat",
-      scene,
-      {
-        vertex: shaderName,
-        fragment: shaderName,
-      },
-      {
-        attributes: ["position", "uv"],
-        uniforms: [
-          "world",
-          "worldView",
-          "worldViewProjection",
-          "iTime",
-          "iResolution",
-        ],
-      },
-    );
-
-    plane.material = material;
-  } catch (e) {
-    console.error("init shader failed", e);
-  }
-
-  let start = Date.now();
-  engine.runRenderLoop(() => {
-    const now = (Date.now() - start) / 1000;
-    if (material && material.setFloat) {
-      try {
-        material.setFloat("iTime", now);
-      } catch (e) {}
     }
-    if (material && material.setVector2) {
-      try {
-        material.setVector2(
-          "iResolution",
-          new BABYLON.Vector2(canvas.width, canvas.height),
-        );
-      } catch (e) {}
-    }
-    scene.render();
   });
 };
 
@@ -249,19 +112,16 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   try {
-    engine && engine.dispose();
+    babylonHandle && babylonHandle.dispose && babylonHandle.dispose();
   } catch (e) {}
 });
 
 const goBack = () => {
   // dispose babylon and return to list view
   try {
-    engine && engine.dispose();
+    babylonHandle && babylonHandle.dispose && babylonHandle.dispose();
   } catch (e) {}
-  engine = null;
-  scene = null;
-  camera = null;
-  material = null;
+  babylonHandle = null;
   view.value = "list";
 };
 </script>
@@ -306,9 +166,10 @@ const goBack = () => {
         align-items: center;
         justify-content: center;
       }
-      canvas.canvas-preview {
+      .cover-image {
         width: 100%;
         height: 100%;
+        object-fit: cover;
         display: block;
       }
       .meta {
@@ -316,6 +177,9 @@ const goBack = () => {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        h3 {
+          color: #111;
+        }
       }
     }
   }
