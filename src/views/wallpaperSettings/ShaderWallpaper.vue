@@ -225,7 +225,6 @@ const goBack = () => {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 8px 6px 12px 6px;
 
         .el-button {
           padding: 0;
@@ -267,7 +266,7 @@ const goBack = () => {
           }
         }
         .right {
-          width: 45%;
+          width: 60%;
           padding-left: 16px;
           .monaco-editor {
             height: 100%;
