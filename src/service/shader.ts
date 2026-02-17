@@ -22,17 +22,32 @@ export function initBabylon(
   const scene = new BABYLON.Scene(engine);
   const camera = new BABYLON.FreeCamera(
     "cam",
-    new BABYLON.Vector3(0, 0, -5),
+    new BABYLON.Vector3(0, 0, -1),
     scene,
   );
   camera.setTarget(BABYLON.Vector3.Zero());
-  camera.attachControl(canvas, true);
+  // use an orthographic camera so the shader is screen-space and doesn't
+  // change with 3D perspective transforms
+  camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
 
+  const setOrtho = () => {
+    const w = canvas.width;
+    const h = canvas.height;
+    // apply ortho frustum in pixel-like units centered on origin
+    (camera as any).orthoLeft = -w / 2;
+    (camera as any).orthoRight = w / 2;
+    (camera as any).orthoTop = h / 2;
+    (camera as any).orthoBottom = -h / 2;
+  };
+  setOrtho();
+
+  // create a plane that exactly covers the orthographic frustum (full-screen)
   const plane = BABYLON.MeshBuilder.CreatePlane(
     "plane",
-    { width: 4, height: 2.25 },
+    { width: canvas.width, height: canvas.height },
     scene,
   );
+  plane.position = new BABYLON.Vector3(0, 0, 0);
 
   // vertex shader
   BABYLON.Effect.ShadersStore[shaderName + "VertexShader"] = `
@@ -49,6 +64,25 @@ export function initBabylon(
 
   let material: BABYLON.ShaderMaterial | null = null;
   let start = Date.now();
+
+  // update material/resolution when canvas resizes
+  const resizeHandler = () => {
+    try {
+      engine.resize();
+    } catch (e) {}
+    try {
+      setOrtho();
+    } catch (e) {}
+    try {
+      if (material && (material as any).setVector2) {
+        (material as any).setVector2(
+          "iResolution",
+          new BABYLON.Vector2(canvas.width, canvas.height),
+        );
+      }
+    } catch (e) {}
+  };
+  window.addEventListener("resize", resizeHandler);
 
   const createMaterialFromSource = (src: string) => {
     // ensure fragment source exists and looks plausible
@@ -132,6 +166,9 @@ export function initBabylon(
     } catch (e) {}
     try {
       engine.dispose();
+    } catch (e) {}
+    try {
+      window.removeEventListener("resize", resizeHandler);
     } catch (e) {}
     // cleanup shaders store
     try {
@@ -236,6 +273,54 @@ export class MonacoShaderEditor {
     } catch (e) {}
 
     this.initEditor(container, initialCode, onChange);
+
+    // Register formatting action for GLSL after editor is created
+    try {
+      this.monacoEditor.addAction({
+        id: "format-glsl",
+        label: "Format GLSL",
+        keybindings: [
+          // macOS: Shift+Option+F, Windows/Linux: Shift+Alt+F
+          monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
+        ],
+        run: (ed: monaco.editor.ICodeEditor) => {
+          this.formatCode(ed);
+        },
+      });
+    } catch (e) {}
+  }
+
+  // Simple GLSL formatter
+  formatCode(editor: monaco.editor.ICodeEditor) {
+    const model = editor.getModel();
+    if (!model) return;
+
+    let code = model.getValue();
+
+    // Basic GLSL formatting rules
+    // Add newline after {
+    code = code.replace(/\{(?=[^{}]*;)/g, "{\n");
+    // Add newline before }
+    code = code.replace(/;(?=[^;]*(?:\n[^;]*)*\{)/g, ";\n");
+    // Add newline before }
+    code = code.replace(/\}(?=[^{}]*;)/g, "\n}");
+    // Add newline after ; (but not for for loops)
+    code = code.replace(/;(?!.*\b(for|while|if|else)\b)/g, ";\n");
+    // Clean up multiple blank lines
+    code = code.replace(/\n{3,}/g, "\n\n");
+    // Trim leading/trailing whitespace per line
+    code = code
+      .split("\n")
+      .map((line) => line.trim())
+      .join("\n");
+
+    // Apply the formatted code
+    editor.setValue(code);
+
+    // Trigger change event
+    const listener = editor.onDidChangeModelContent(() => {
+      listener.dispose();
+    });
   }
 
   initEditor(

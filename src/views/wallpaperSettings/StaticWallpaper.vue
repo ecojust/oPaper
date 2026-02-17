@@ -102,6 +102,7 @@ import {
   onActivated,
   onDeactivated,
   computed,
+  nextTick,
 } from "vue";
 import Panel from "@/service/panel";
 import { IntervalCorn } from "@/service/corn";
@@ -300,13 +301,19 @@ const handleDeleteWallpaper = async (wallpaper) => {
 };
 
 onMounted(() => {
-  readConfig();
-  readLocalStaticWallpapers();
+  nextTick(() => {
+    console.log("Stage组件激活，更新corn");
+    readConfig();
+    readLocalStaticWallpapers();
+  });
 });
 
 onActivated(() => {
-  readConfig();
-  readLocalStaticWallpapers();
+  nextTick(() => {
+    console.log("Stage组件激活，更新corn");
+    readConfig();
+    readLocalStaticWallpapers();
+  });
 });
 
 onDeactivated(() => {
