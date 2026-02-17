@@ -150,116 +150,130 @@ const goBack = () => {
 <style lang="less">
 .shader-wallpaper {
   position: relative;
-  padding: 0; // keep overall layout tight so view-wrapper controls offset
-  width: 100vw;
+  /* add padding inside the component and include it in sizing to avoid overflow */
+  padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+  /* ensure the component fits the viewport and doesn't cause page scroll */
+  height: 100%;
+  // flex: 1;
+  overflow: hidden;
+  // background: red;
 
   .view-wrapper {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    right: 20px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 20px;
+
     /* ensure both list and detail occupy the same box */
-    min-height: 400px;
-    width: 100%;
-  }
+    /* remove fixed min-height so it fits inside viewport */
+    width: auto;
+    .wallpaper-list {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
 
-  .wallpaper-list {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-
-    margin: 0; /* align to left-top inside view-wrapper */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 16px;
-    }
-    .shader-item {
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      .thumb {
-        height: 150px;
-        background: #111;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      margin: 0; /* align to left-top inside view-wrapper */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
       }
-      .cover-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-      .meta {
-        padding: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        h3 {
-          color: #111;
-        }
-      }
-    }
-  }
-
-  .detail-page {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    .detail-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 6px 12px 6px;
-
-      .el-button {
-        padding: 0;
-        width: 36px;
-        height: 36px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+      .shader-item {
+        background: white;
         border-radius: 8px;
-        transition:
-          background-color 160ms ease,
-          transform 120ms ease;
-        color: #0f1724;
-      }
-      .el-button:hover {
-        background: rgba(15, 23, 36, 0.06);
-        transform: translateY(-1px);
-      }
-      .el-icon {
-        font-size: 18px;
-        line-height: 1;
-      }
-      .detail-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #0f1724;
-        margin-left: 6px;
-      }
-    }
-    .detail {
-      display: flex;
-      height: 100%;
-      .left {
-        flex: 1;
-        .babylon-canvas {
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        .thumb {
+          height: 150px;
+          background: #111;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .cover-image {
           width: 100%;
           height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .meta {
+          padding: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          h3 {
+            color: #111;
+          }
         }
       }
-      .right {
-        width: 45%;
-        padding-left: 16px;
-        .monaco-editor {
-          height: calc(100vh - 200px);
-          border: 1px solid #e6e6e6;
+    }
+
+    .detail-page {
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      .detail-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 6px 12px 6px;
+
+        .el-button {
+          padding: 0;
+          width: 36px;
+          height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          transition:
+            background-color 160ms ease,
+            transform 120ms ease;
+          color: #0f1724;
+        }
+        .el-button:hover {
+          background: rgba(15, 23, 36, 0.06);
+          transform: translateY(-1px);
+        }
+        .el-icon {
+          font-size: 18px;
+          line-height: 1;
+        }
+        .detail-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #0f1724;
+          margin-left: 6px;
+        }
+      }
+      .detail {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        .left {
+          flex: 1;
+          .babylon-canvas {
+            width: 100%;
+            height: 100%;
+          }
+        }
+        .right {
+          width: 45%;
+          padding-left: 16px;
+          .monaco-editor {
+            height: 100%;
+            border: 1px solid #e6e6e6;
+            overflow: auto;
+          }
         }
       }
     }
