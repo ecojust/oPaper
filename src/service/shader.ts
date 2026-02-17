@@ -365,7 +365,7 @@ export class Shader {
 
   static async newDraft() {
     return {
-      title: "draft-" + new Date().toISOString(),
+      title: "draft_" + new Date().getTime(),
       code: `
         precision highp float;
         varying vec2 vUV;
@@ -429,7 +429,6 @@ export class Shader {
       if (folders instanceof Array === false) {
         throw new Error("Expected an array from read_wallpaper_shader");
       }
-      console.log("Local shader list:", folders);
       return folders.map((folderPath: any, index: number) => ({
         id: `${folderPath}`,
         title: folderPath.split("/").pop() || `本地图片 ${index + 1}`,

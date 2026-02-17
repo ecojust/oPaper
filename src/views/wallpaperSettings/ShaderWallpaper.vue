@@ -5,9 +5,22 @@
         <div v-if="view === 'list'" key="list" class="wallpaper-list">
           <div v-if="loading" class="loading">加载中...</div>
           <div v-else class="grid">
+            <!-- 新增 Shader 按钮 -->
+            <div class="shader-item add-new" @click="createNewShader">
+              <div class="add-icon">
+                <el-icon size="48"><Plus /></el-icon>
+              </div>
+              <div class="meta">
+                <h3>新建 Shader</h3>
+              </div>
+            </div>
+            <!-- 现有 Shader 列表 -->
             <div v-for="item in shaders" :key="item.name" class="shader-item">
               <div class="thumb" @click="setShaderBackground(item)">
-                <img :src="item.cover || defaultCover" class="cover-image" />
+                <img
+                  :src="item.thumbnail || defaultCover"
+                  class="cover-image"
+                />
               </div>
               <div class="meta">
                 <h3>{{ item.title }}</h3>
@@ -53,7 +66,7 @@
 <script setup>
 import { ref, onMounted, nextTick, onBeforeUnmount } from "vue";
 import { ElButton, ElDivider, ElInput, ElIcon } from "element-plus";
-import { ArrowLeft } from "@element-plus/icons-vue";
+import { ArrowLeft, Plus } from "@element-plus/icons-vue";
 
 import { initBabylon, MonacoShaderEditor, Shader } from "@/service/shader";
 
@@ -74,7 +87,7 @@ const defaultCover =
 const fetchList = async () => {
   try {
     const localShaders = await Shader.getLocalShaderList(); // for debug
-    // console.log("Local shaders:", localShaders);
+    console.log("Local shaders:", localShaders);
     // const res = await fetch("/shaders/list.json");
     // const data = await res.json();
     shaders.value = localShaders;
@@ -89,41 +102,67 @@ const fetchList = async () => {
 const openDetail = async (item) => {
   currentShader.value = item;
   // load code
-  const code = await fetch(item.path).then((r) => r.text());
-  currentCode.value = code;
+  const code = await fetch(item.url).then((r) => r.text());
+  console.log("Loaded shader code:", code);
+  currentShader.value.code = code;
   view.value = "detail";
   nextTick(() => {
-    const canvas = document.getElementById("babylon-canvas");
-    if (canvas) {
-      try {
-        babylonHandle = initBabylon(canvas, () => currentCode.value);
-      } catch (e) {
-        console.error("init babylon failed", e);
-      }
-    }
-    // initialize or reuse a singleton Monaco editor (dynamically import)
-    const container = monacoContainer.value;
-    if (container) {
-      monacoEditor = new MonacoShaderEditor(
-        container,
-        currentCode.value,
-        (code) => {
-          currentCode.value = code;
-        },
-      );
-    }
+    initEditor();
   });
 };
 
+// 创建新的 Shader（从模板）
+const createNewShader = async () => {
+  try {
+    const draft = await Shader.newDraft();
+    currentShader.value = {
+      title: draft.title,
+      code: draft.code,
+      isNew: true, // 标记为新建
+    };
+    view.value = "detail";
+    nextTick(() => {
+      initEditor();
+    });
+  } catch (e) {
+    console.error("Failed to create new shader:", e);
+  }
+};
+
+// 初始化编辑器（Babylon + Monaco）
+const initEditor = () => {
+  const canvas = document.getElementById("babylon-canvas");
+  if (canvas) {
+    try {
+      babylonHandle = initBabylon(canvas, () => currentShader.value.code);
+    } catch (e) {
+      console.error("init babylon failed", e);
+    }
+  }
+  // initialize or reuse a singleton Monaco editor (dynamically import)
+  const container = monacoContainer.value;
+  if (container) {
+    monacoEditor = new MonacoShaderEditor(
+      container,
+      currentShader.value.code,
+      (code) => {
+        currentShader.value.code = code;
+      },
+    );
+  }
+};
+
 const saveShader = async () => {
-  // for now, just download the shader code as a file
-  const blob = new Blob([currentCode.value], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = currentShader.value.name || "shader.frag";
-  a.click();
-  URL.revokeObjectURL(url);
+  const base64Data = document
+    .getElementById("babylon-canvas")
+    .toDataURL("image/png")
+    .split(",")[1]; // 获取 Base64 数据
+  await Shader.saveShaderBackground(
+    currentShader.value.title,
+    currentShader.value.code,
+    base64Data,
+  );
+  goBack();
 };
 
 const setShaderBackground = (item) => {
@@ -148,6 +187,7 @@ const goBack = () => {
   monacoEditor = null;
 
   view.value = "list";
+  fetchList();
 };
 
 // read config
@@ -212,6 +252,14 @@ onBeforeUnmount(() => {
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+        &:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
         .thumb {
           height: 150px;
           background: #111;
@@ -232,6 +280,26 @@ onBeforeUnmount(() => {
           align-items: center;
           h3 {
             color: #111;
+          }
+        }
+        // 新建按钮样式
+        &.add-new {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 200px;
+          .add-icon {
+            color: white;
+            opacity: 0.9;
+          }
+          .meta {
+            justify-content: center;
+            h3 {
+              color: white;
+              font-weight: 500;
+            }
           }
         }
       }
