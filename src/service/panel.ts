@@ -88,17 +88,6 @@ export default class Panel {
     }
   }
 
-  static async switchAnimationWallpaper(lastConfig = {}) {
-    await invoke("set_config", {
-      content: JSON.stringify({
-        ...lastConfig,
-        mode: "animation",
-        loop: false,
-      }),
-    });
-    await invoke("create_animation_wallpaper", {});
-  }
-
   static async downloadCurrentWallpaper(path: string) {
     try {
       await invoke("copy_wallpaper_to_wallpaper_static", { path });

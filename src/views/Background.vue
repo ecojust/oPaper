@@ -4,11 +4,10 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
-import { initBabylon, Shader } from "@/service/shader";
 import Config from "@/service/config";
+import { initBabylon, Shader } from "@/service/shader";
 
 import { oPaper } from "../utils/oPaper";
-import router from "@/router";
 
 const parent = ref();
 let instance = null;
@@ -17,13 +16,11 @@ const initBackground = async () => {
   if (!parent.value) {
     return;
   }
-
   const config = await Config.readConfig();
 
   switch (config.mode) {
     case "shader":
       const code = await fetch(config.shaderPath).then((r) => r.text());
-
       const canvas = document.createElement("canvas");
       canvas.id = "babylon-canvas";
       canvas.className = "babylon-canvas";
@@ -41,12 +38,6 @@ const initBackground = async () => {
 
 onMounted(() => {
   initBackground();
-});
-
-onUnmounted(() => {
-  // if (instance) {
-  //   instance.destroy();
-  // }
 });
 </script>
 

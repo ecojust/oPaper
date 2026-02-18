@@ -133,7 +133,6 @@ pub fn set_window_to_desktop(
 /// 创建动态壁纸窗口
 pub fn create_animation_window(
     app: &tauri::AppHandle,
-    mode: String,
 ) -> Result<tauri::WebviewWindow, Box<dyn std::error::Error>> {
     // 获取主显示器尺寸
     let monitor = app.primary_monitor()?.ok_or("No primary monitor found")?;
@@ -153,7 +152,7 @@ pub fn create_animation_window(
     println!("Logical size: {}x{}", logical_width, logical_height);
 
     // 创建 background 窗口，使用逻辑尺寸
-    let url = format!("index.html/#/background?mode={}", mode);
+    let url = format!("index.html/#/background");
     let background_window =
         tauri::WebviewWindowBuilder::new(app, "background", tauri::WebviewUrl::App(url.into()))
             .title("background")
@@ -180,16 +179,23 @@ pub fn create_animation_window(
 
 /// Tauri 命令：初始化动态壁纸
 #[tauri::command]
-pub fn create_animation_wallpaper(app: tauri::AppHandle, mode: String) -> Result<String, String> {
+pub async fn create_animation_wallpaper(app: tauri::AppHandle) -> Result<String, String> {
+    // 如果已存在 background 窗口，先关闭它
     if let Some(window) = app.get_webview_window("background") {
+        // window
+        //     .close()
+        //     .map_err(|e| format!("Failed to close window: {}", e))?;
         window
-            .close()
-            .map_err(|e| format!("Failed to close window: {}", e))?;
-    }
-
-    match create_animation_window(&app, mode) {
-        Ok(_) => Ok("Animation wallpaper initialized successfully".to_string()),
-        Err(e) => Err(format!("Failed to initialize animation wallpaper: {}", e)),
+            .reload()
+            .map_err(|e| format!("Failed to reload window: {}", e))?;
+        Ok("The background window reloaded successfully".to_string())
+    } else {
+        println!("No existing background window found, creating a new one");
+        // 创建新窗口
+        match create_animation_window(&app) {
+            Ok(_) => Ok("Animation wallpaper initialized successfully".to_string()),
+            Err(e) => Err(format!("Failed to initialize animation wallpaper: {}", e)),
+        }
     }
 }
 

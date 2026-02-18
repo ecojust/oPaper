@@ -441,7 +441,6 @@ export class Shader {
   static async setShaderBackground(path: string) {
     const lastConfig = await Shader.readConfig();
     try {
-      console.log("setShaderBackground", path);
       await invoke("set_config", {
         content: JSON.stringify({
           ...lastConfig,
@@ -452,9 +451,7 @@ export class Shader {
     } catch (e) {
       console.log("set_shader_wallpaper_from_path: " + e);
     }
-    await invoke("create_animation_wallpaper", {
-      mode: "shader",
-    });
+    await invoke("create_animation_wallpaper");
   }
 
   static async saveShaderBackground(
