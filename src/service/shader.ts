@@ -369,7 +369,7 @@ export class MonacoShaderEditor {
       this.monacoEditor = monaco.editor.create(container, {
         model: this.monacoModel,
         // value: initialCode,
-        theme: "vs-dark",
+        theme: "shaderTheme",
         language: "glsl",
         // automaticLayout: true,
         minimap: { enabled: true },

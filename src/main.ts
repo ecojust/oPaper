@@ -5,6 +5,8 @@ import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import "./reset.less";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
+// 导入 Monaco Editor workers 配置（解决生产环境代码高亮问题）
+import "./monaco-workers";
 
 const app = createApp(App);
 
