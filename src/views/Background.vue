@@ -62,15 +62,12 @@ onMounted(() => {
   try {
     initBackground();
   } catch (error) {
-    document.body.innerHTML =
-      "<h1 style='color:red;'>Failed to initialize background. Check console for details.</h1>" +
-      error.message;
     console.error("Failed to initialize background:", error);
   }
 });
 </script>
 
-<style scoped>
+<style lang="less">
 /* 无需样式，全部由 oPaper 动态生成 */
 .background {
   width: 100vw;
@@ -79,5 +76,8 @@ onMounted(() => {
   padding: 0;
   /* border:1px solid red; */
   background: black;
+  .log {
+    display: none;
+  }
 }
 </style>
