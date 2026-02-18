@@ -1,5 +1,11 @@
 <template>
-  <div class="background" ref="parent"></div>
+  <div class="background" ref="parent">
+    <div class="log">
+      <div class="item" v-for="i in msg" :key="i">
+        {{ i }}
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -10,22 +16,32 @@ import { initBabylon, Shader } from "@/service/shader";
 import { oPaper } from "../utils/oPaper";
 
 const parent = ref();
+const msg = ref([]);
+
 let instance = null;
 
 const initBackground = async () => {
+  msg.value.push("initBackground");
   if (!parent.value) {
     return;
   }
   const config = await Config.readConfig();
+  msg.value.push("readConfig");
 
   switch (config.mode) {
     case "shader":
+      msg.value.push("shader");
+
       const code = await fetch(config.shaderPath).then((r) => r.text());
+      msg.value.push("code");
+
       const canvas = document.createElement("canvas");
       canvas.id = "babylon-canvas";
       canvas.className = "babylon-canvas";
       canvas.style.cssText = "width:100%;height:100%;display:block;";
       parent.value.appendChild(canvas);
+
+      msg.value.push("initBabylon");
 
       instance = initBabylon(canvas, () => {
         return code;
@@ -37,7 +53,16 @@ const initBackground = async () => {
 };
 
 onMounted(() => {
-  initBackground();
+  msg.value.push("onMounted");
+
+  try {
+    initBackground();
+  } catch (error) {
+    document.body.innerHTML =
+      "<h1 style='color:red;'>Failed to initialize background. Check console for details.</h1>" +
+      error.message;
+    console.error("Failed to initialize background:", error);
+  }
 });
 </script>
 

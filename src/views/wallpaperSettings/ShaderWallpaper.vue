@@ -77,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, onBeforeUnmount } from "vue";
+import { ref, onMounted, nextTick, onBeforeUnmount, onActivated } from "vue";
 import {
   ElButton,
   ElDivider,
@@ -247,12 +247,19 @@ const goBack = () => {
 const readConfig = async () => {
   try {
     config.value = await Shader.readConfig();
+    console.log("read_config:", config.value);
   } catch (e) {
     console.error("read_config:", e);
   }
 };
 
 onMounted(() => {
+  fetchList();
+  readConfig();
+});
+
+onActivated(() => {
+  // 每次进入页面都刷新列表，确保数据是最新的
   fetchList();
   readConfig();
 });
