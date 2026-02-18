@@ -368,7 +368,7 @@ export class MonacoShaderEditor {
       this.monacoModel = monaco.editor.createModel(initialCode, "glsl");
       this.monacoEditor = monaco.editor.create(container, {
         model: this.monacoModel,
-        value: initialCode,
+        // value: initialCode,
         theme: "vs-dark",
         language: "glsl",
         // automaticLayout: true,
@@ -393,7 +393,12 @@ export class MonacoShaderEditor {
       //   contextMenuGroupId: "navigation",
       //   contextMenuOrder: 1.5,
       //   run: () => {
-      //     this.formatCode(this.monacoEditor);
+      //     // this.formatCode(this.monacoEditor);
+      //     const formatDocument = this.monacoEditor.getAction(
+      //       "editor.action.formatDocument",
+      //     );
+      //     formatDocument?.run();
+      //     console.log(formatDocument);
       //   },
       // });
     } catch (e) {}
