@@ -378,70 +378,161 @@ onBeforeUnmount(() => {
       bottom: 0;
       display: flex;
       flex-direction: column;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 16px;
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -2px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+      overflow: hidden;
+
       .detail-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
+        gap: 12px;
+        padding: 10px 16px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
 
         .left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
           .el-button {
             padding: 0;
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border-radius: 8px;
-            transition:
-              background-color 160ms ease,
-              transform 120ms ease;
-            color: #0f1724;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            color: #475569;
+            background: transparent;
+            border: none;
           }
           .el-button:hover {
-            background: rgba(15, 23, 36, 0.06);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
           }
           .el-icon {
-            font-size: 18px;
+            font-size: 16px;
             line-height: 1;
           }
           .detail-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #0f1724;
-            margin-left: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
           }
         }
 
         .button-bar {
+          display: flex;
+          gap: 8px;
+
+          .el-button {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .el-button:first-child {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+
+            &:hover {
+              background: #f8fafc;
+              border-color: #cbd5e1;
+              color: #1e293b;
+            }
+          }
+
+          .el-button:last-child {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+
+            &:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            }
+          }
         }
       }
+
       .detail {
         display: flex;
         flex: 1;
         overflow: hidden;
+        padding: 16px;
+        gap: 16px;
+
         .left {
           flex: 1;
+          background: #0f172a;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.3),
+            0 2px 4px -2px rgba(0, 0, 0, 0.2),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+          position: relative;
+
+          &::before {
+            content: "Preview";
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            z-index: 10;
+            pointer-events: none;
+          }
+
           .babylon-canvas {
             width: 100%;
             height: 100%;
+            display: block;
           }
         }
         .right {
-          width: 60%;
-          padding-left: 16px;
+          width: 55%;
           display: flex;
           flex-direction: column;
-          .button-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
+          &::before {
+            content: "Shader Code";
+            display: block;
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
           }
+
           .monaco-editor {
             flex: 1;
-            border: 1px solid #e6e6e6;
-            overflow: auto;
+            overflow: hidden;
           }
         }
       }
