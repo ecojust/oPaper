@@ -90,7 +90,7 @@ import {
 } from "element-plus";
 import { ArrowLeft, Plus } from "@element-plus/icons-vue";
 
-import { initBabylon, CodemirrorShaderEditor, Shader } from "@/service/shader";
+import { initBabylon, MonacoShaderEditor, Shader } from "@/service/shader";
 import { ElMessageBox } from "element-plus";
 import { sleep } from "@/utils/util";
 
@@ -167,7 +167,7 @@ const initEditor = () => {
   // initialize CodeMirror editor
   const container = monacoContainer.value;
   if (container) {
-    monacoEditor = new CodemirrorShaderEditor(
+    monacoEditor = new MonacoShaderEditor(
       container,
       currentShader.value.code,
       (code) => {

@@ -2,25 +2,7 @@ import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import Config from "@/service/config";
 
 import * as BABYLON from "@babylonjs/core";
-import { EditorState } from "@codemirror/state";
-import {
-  EditorView,
-  keymap,
-  lineNumbers,
-  highlightActiveLineGutter,
-  highlightSpecialChars,
-  drawSelection,
-  highlightActiveLine,
-} from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { cpp } from "@codemirror/lang-cpp";
-import { oneDark } from "@codemirror/theme-one-dark";
-import {
-  syntaxHighlighting,
-  defaultHighlightStyle,
-  bracketMatching,
-  foldGutter,
-} from "@codemirror/language";
+import * as monaco from "monaco-editor";
 
 import Dialog from "./dialog";
 
@@ -275,15 +257,106 @@ export function initBabylon(
   return { dispose, updateCode, sceneShot };
 }
 
-export class CodemirrorShaderEditor {
-  private editorView: EditorView = null as any;
+export class MonacoShaderEditor {
+  private monacoEditor: monaco.editor.IStandaloneCodeEditor = null as any;
+  private monacoModel: monaco.editor.ITextModel = null as any;
 
   constructor(
     container: HTMLElement,
     initialCode: string,
     onChange: (code: string) => void,
   ) {
+    try {
+      monaco.languages.register({ id: "glsl" });
+      monaco.languages.setMonarchTokensProvider("glsl", {
+        defaultToken: "",
+        tokenPostfix: ".glsl",
+        keywords: ["if", "else", "for", "while", "return", "discard"],
+        types: [
+          "float",
+          "int",
+          "bool",
+          "void",
+          "vec2",
+          "vec3",
+          "vec4",
+          "mat3",
+          "mat4",
+          "sampler2D",
+        ],
+        symbols: /[=><!~?:&|+\-*\/%^]+/,
+        tokenizer: {
+          root: [
+            [/\/\/.*$/, "comment"],
+            [/\/\*/, "comment", "@comment"],
+            [/#\s*[a-zA-Z_][\w]*/, "keyword"],
+            [/[a-zA-Z_][\w]*(?=\s*\()/, "identifier"],
+            [
+              /[a-zA-Z_][\w]*/,
+              {
+                cases: {
+                  "@keywords": "keyword",
+                  "@types": "type",
+                  "@default": "identifier",
+                },
+              },
+            ],
+            [/\d+\.\d+([eE][\-+]?\d+)?/, "number.float"],
+            [/\d+/, "number"],
+            [/[{}()\[\]]/, "delimiter"],
+            [/[,;.]/, "delimiter"],
+            [/@symbols/, "operator"],
+          ],
+          comment: [
+            [/[^/*]+/, "comment"],
+            [/\*\//, "comment", "@pop"],
+            [/[/*]/, "comment"],
+          ],
+        },
+      });
+    } catch (e) {}
+
+    try {
+      monaco.editor.defineTheme("shaderTheme", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [
+          { token: "comment", foreground: "6A9955" },
+          { token: "keyword", foreground: "569CD6" },
+          { token: "type", foreground: "4EC9B0" },
+          { token: "number", foreground: "B5CEA8" },
+          { token: "operator", foreground: "D4D4D4" },
+          { token: "identifier", foreground: "9CDCFE" },
+        ],
+        colors: { "editor.background": "#0f1724" },
+      });
+    } catch (e) {}
+
     this.initEditor(container, initialCode, onChange);
+  }
+
+  // GLSL formatter using prettier with glsl parser
+  async formatCode(editor: monaco.editor.ICodeEditor) {
+    const model = editor.getModel();
+    if (!model) return;
+
+    const code = model.getValue();
+
+    try {
+      // const formatted = await prettier.format(code, {
+      //   parser: "glsl-parser",
+      //   plugins: [glslParser],
+      // });
+      const formatted = code; // 暂时不格式化，直接返回原代码，避免 prettier glsl 插件导致的性能问题
+      editor.setValue(formatted);
+    } catch (e) {
+      console.warn("Failed to format code with prettier:", e);
+    }
+
+    // Trigger change event
+    const listener = editor.onDidChangeModelContent(() => {
+      listener.dispose();
+    });
   }
 
   initEditor(
@@ -292,63 +365,51 @@ export class CodemirrorShaderEditor {
     onChange: (code: string) => void,
   ) {
     try {
-      // Clear container first
-      container.innerHTML = "";
-
-      const updateListener = EditorView.updateListener.of((update) => {
-        if (update.docChanged) {
-          const code = update.state.doc.toString();
+      this.monacoModel = monaco.editor.createModel(initialCode, "glsl");
+      this.monacoEditor = monaco.editor.create(container, {
+        model: this.monacoModel,
+        // value: initialCode,
+        theme: "vs-dark",
+        language: "glsl",
+        // automaticLayout: true,
+        minimap: { enabled: true },
+        // fontSize: 13,
+        // wordWrap: "on",
+      });
+      this.monacoEditor.onDidChangeModelContent(() => {
+        try {
+          const code = this.monacoEditor.getValue();
           onChange && onChange(code);
-        }
+        } catch (e) {}
       });
 
-      const state = EditorState.create({
-        doc: initialCode,
-        extensions: [
-          lineNumbers(),
-          highlightActiveLineGutter(),
-          highlightSpecialChars(),
-          history(),
-          foldGutter(),
-          drawSelection(),
-          EditorState.allowMultipleSelections.of(true),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-          bracketMatching(),
-          highlightActiveLine(),
-          keymap.of([...defaultKeymap, ...historyKeymap]),
-          cpp(),
-          oneDark,
-          updateListener,
-          EditorView.theme({
-            "&": {
-              height: "100%",
-              fontSize: "13px",
-            },
-            ".cm-scroller": {
-              overflow: "auto",
-            },
-            ".cm-content": {
-              fontFamily: "'Fira Code', 'Consolas', monospace",
-            },
-          }),
-        ],
-      });
-
-      this.editorView = new EditorView({
-        state,
-        parent: container,
-      });
-    } catch (e) {
-      console.error("Failed to initialize CodeMirror editor:", e);
-    }
+      // Register format action using prettier
+      // this.monacoEditor.addAction({
+      //   id: "format-glsl",
+      //   label: "Format",
+      //   keybindings: [
+      //     monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
+      //   ],
+      //   contextMenuGroupId: "navigation",
+      //   contextMenuOrder: 1.5,
+      //   run: () => {
+      //     // this.formatCode(this.monacoEditor);
+      //     const formatDocument = this.monacoEditor.getAction(
+      //       "editor.action.formatDocument",
+      //     );
+      //     formatDocument?.run();
+      //     console.log(formatDocument);
+      //   },
+      // });
+    } catch (e) {}
   }
 
   dispose() {
     try {
-      if (this.editorView) {
-        this.editorView.destroy();
-        this.editorView = null as any;
-      }
+      this.monacoEditor.dispose();
+    } catch (e) {}
+    try {
+      this.monacoModel.dispose();
     } catch (e) {}
   }
 }
@@ -486,5 +547,5 @@ export class Shader {
 
 export default {
   initBabylon,
-  CodemirrorShaderEditor,
+  MonacoShaderEditor,
 };
