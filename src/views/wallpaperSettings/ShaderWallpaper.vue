@@ -46,25 +46,28 @@
       <transition name="fade-slide" mode="out-in">
         <div v-if="view === 'detail'" key="detail" class="detail-page">
           <div class="detail-header">
-            <el-button type="text" @click="goBack">
-              <el-icon><ArrowLeft /></el-icon>
-            </el-button>
-            <span class="detail-title">{{
-              currentShader?.title || "Shader 编辑"
-            }}</span>
+            <div class="left">
+              <el-button type="text" @click="goBack">
+                <el-icon><ArrowLeft /></el-icon>
+              </el-button>
+              <span class="detail-title">{{
+                currentShader?.title || "Shader 编辑"
+              }}</span>
+            </div>
+
+            <div class="button-bar">
+              <el-button @click="recompileShader" :loading="recompiling">
+                重新编译
+              </el-button>
+              <el-button @click="saveShader" type="primary">保存</el-button>
+            </div>
           </div>
           <div class="detail">
             <div class="left">
               <canvas id="babylon-canvas" class="babylon-canvas"></canvas>
             </div>
             <div class="right">
-              <div class="button-bar">
-                <el-button @click="recompileShader" :loading="recompiling">
-                  重新编译
-                </el-button>
-                <el-button @click="saveShader" type="primary">保存</el-button>
-              </div>
-              <el-divider />
+              <!-- <el-divider /> -->
               <div ref="monacoContainer" class="monaco-editor" />
             </div>
           </div>
@@ -378,34 +381,40 @@ onBeforeUnmount(() => {
       .detail-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 10px;
 
-        .el-button {
-          padding: 0;
-          width: 36px;
-          height: 36px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 8px;
-          transition:
-            background-color 160ms ease,
-            transform 120ms ease;
-          color: #0f1724;
+        .left {
+          .el-button {
+            padding: 0;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition:
+              background-color 160ms ease,
+              transform 120ms ease;
+            color: #0f1724;
+          }
+          .el-button:hover {
+            background: rgba(15, 23, 36, 0.06);
+            transform: translateY(-1px);
+          }
+          .el-icon {
+            font-size: 18px;
+            line-height: 1;
+          }
+          .detail-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f1724;
+            margin-left: 6px;
+          }
         }
-        .el-button:hover {
-          background: rgba(15, 23, 36, 0.06);
-          transform: translateY(-1px);
-        }
-        .el-icon {
-          font-size: 18px;
-          line-height: 1;
-        }
-        .detail-title {
-          font-size: 16px;
-          font-weight: 700;
-          color: #0f1724;
-          margin-left: 6px;
+
+        .button-bar {
         }
       }
       .detail {

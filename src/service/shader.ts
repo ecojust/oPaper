@@ -368,12 +368,13 @@ export class MonacoShaderEditor {
       this.monacoModel = monaco.editor.createModel(initialCode, "glsl");
       this.monacoEditor = monaco.editor.create(container, {
         model: this.monacoModel,
-        theme: "shaderTheme",
+        value: initialCode,
+        theme: "vs-dark",
         language: "glsl",
-        automaticLayout: true,
-        minimap: { enabled: false },
-        fontSize: 13,
-        wordWrap: "on",
+        // automaticLayout: true,
+        minimap: { enabled: true },
+        // fontSize: 13,
+        // wordWrap: "on",
       });
       this.monacoEditor.onDidChangeModelContent(() => {
         try {
@@ -383,18 +384,18 @@ export class MonacoShaderEditor {
       });
 
       // Register format action using prettier
-      this.monacoEditor.addAction({
-        id: "format-glsl",
-        label: "Format",
-        keybindings: [
-          monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
-        ],
-        contextMenuGroupId: "navigation",
-        contextMenuOrder: 1.5,
-        run: () => {
-          this.formatCode(this.monacoEditor);
-        },
-      });
+      // this.monacoEditor.addAction({
+      //   id: "format-glsl",
+      //   label: "Format",
+      //   keybindings: [
+      //     monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
+      //   ],
+      //   contextMenuGroupId: "navigation",
+      //   contextMenuOrder: 1.5,
+      //   run: () => {
+      //     this.formatCode(this.monacoEditor);
+      //   },
+      // });
     } catch (e) {}
   }
 
