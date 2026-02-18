@@ -32,7 +32,11 @@ const initBackground = async () => {
     case "shader":
       msg.value.push("shader");
 
-      const code = await fetch(config.shaderPath).then((r) => r.text());
+      msg.value.push(config.shaderPath);
+
+      // const code = await fetch(config.shaderPath).then((r) => r.text());
+      const code = await Shader.getGlslContent(config.shaderPath);
+
       msg.value.push("code");
 
       const canvas = document.createElement("canvas");

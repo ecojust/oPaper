@@ -8,7 +8,7 @@ mod wallpaper_static;
 
 use config::{read_config, set_config};
 use fetch::{fetch_json, fetch_request};
-use fs_helper::open_folder;
+use fs_helper::{open_folder, read_file};
 
 use wallpaper_animation::{create_animation_wallpaper, destroy_animation_wallpaper};
 use wallpaper_shader::{delete_wallpaper_shader, read_wallpaper_shader, save_wallpaper_shader};
@@ -36,6 +36,7 @@ pub fn run() {
             fetch_json,
             //file
             open_folder,
+            read_file,
             //config
             read_config,
             set_config,

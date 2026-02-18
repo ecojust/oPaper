@@ -122,7 +122,8 @@ const fetchList = async () => {
 const openDetail = async (item) => {
   currentShader.value = item;
   // load code
-  const code = await fetch(item.url).then((r) => r.text());
+  // const code = await fetch(item.url).then((r) => r.text());
+  const code = await Shader.getGlslContent(item.url);
   console.log("Loaded shader code:", code);
   currentShader.value.code = code;
   view.value = "detail";

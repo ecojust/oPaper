@@ -508,6 +508,14 @@ export class Shader {
     }
   }
 
+  static async getGlslContent(filePath: string, fullPath = false) {
+    if (fullPath) {
+      return await invoke("read_file", { path: filePath });
+    } else {
+      return await invoke("read_file", { path: filePath });
+    }
+  }
+
   static async getLocalShaderList() {
     try {
       const folders = await invoke("read_wallpaper_shader");
@@ -521,7 +529,8 @@ export class Shader {
         title: folderPath.split("/").pop() || `本地图片 ${index + 1}`,
         thumbnail:
           convertFileSrc(`${folderPath}/thumbnail.png`) + `?t=${cacheBuster}`,
-        url: convertFileSrc(`${folderPath}/shader.glsl`),
+        // url: convertFileSrc(`${folderPath}/shader.glsl`),
+        url: `${folderPath}/shader.glsl`,
       }));
     } catch (e) {
       console.log("Failed to read local shader list: " + e);
