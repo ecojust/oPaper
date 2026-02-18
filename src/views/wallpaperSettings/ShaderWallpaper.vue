@@ -90,7 +90,7 @@ import {
 } from "element-plus";
 import { ArrowLeft, Plus } from "@element-plus/icons-vue";
 
-import { initBabylon, MonacoShaderEditor, Shader } from "@/service/shader";
+import { initBabylon, CodemirrorShaderEditor, Shader } from "@/service/shader";
 import { ElMessageBox } from "element-plus";
 import { sleep } from "@/utils/util";
 
@@ -164,10 +164,10 @@ const initEditor = () => {
       console.error("init babylon failed", e);
     }
   }
-  // initialize or reuse a singleton Monaco editor (dynamically import)
+  // initialize CodeMirror editor
   const container = monacoContainer.value;
   if (container) {
-    monacoEditor = new MonacoShaderEditor(
+    monacoEditor = new CodemirrorShaderEditor(
       container,
       currentShader.value.code,
       (code) => {
