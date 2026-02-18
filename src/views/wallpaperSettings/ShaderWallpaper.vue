@@ -3,35 +3,43 @@
     <div class="view-wrapper">
       <transition name="fade-slide" mode="out-in">
         <div v-if="view === 'list'" key="list" class="wallpaper-list">
-          <div v-if="loading" class="loading">加载中...</div>
-          <div v-else class="grid">
-            <!-- 新增 Shader 按钮 -->
-            <div class="shader-item add-new" @click="createNewShader">
-              <div class="add-icon">
-                <el-icon size="48"><Plus /></el-icon>
+          <el-scrollbar>
+            <div v-if="loading" class="loading">加载中...</div>
+            <div v-else class="grid">
+              <!-- 新增 Shader 按钮 -->
+              <div class="shader-item add-new" @click="createNewShader">
+                <div class="add-icon">
+                  <el-icon size="48"><Plus /></el-icon>
+                </div>
+                <div class="meta">
+                  <h3>新建着色器</h3>
+                </div>
               </div>
-              <div class="meta">
-                <h3>新建 Shader</h3>
-              </div>
-            </div>
-            <!-- 现有 Shader 列表 -->
-            <div v-for="item in shaders" :key="item.name" class="shader-item">
-              <div class="thumb" @click="setShaderBackground(item)">
-                <img
-                  :src="item.thumbnail || defaultCover"
-                  class="cover-image"
-                />
-              </div>
-              <div class="meta">
-                <h3>{{ item.title }}</h3>
-                <div class="actions">
-                  <el-button size="small" @click="openDetail(item)"
-                    >编辑</el-button
-                  >
+              <!-- 现有 Shader 列表 -->
+              <div v-for="item in shaders" :key="item.name" class="shader-item">
+                <div class="thumb" @click="openDetail(item)">
+                  <img
+                    :src="item.thumbnail || defaultCover"
+                    class="cover-image"
+                  />
+                </div>
+                <div class="meta">
+                  <h3>{{ item.title }}</h3>
+                  <div class="actions">
+                    <el-button
+                      size="small"
+                      type="danger"
+                      @click="removeShaderBackground(item)"
+                      >移除</el-button
+                    >
+                    <el-button size="small" @click="setShaderBackground(item)"
+                      >应用</el-button
+                    >
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </el-scrollbar>
         </div>
       </transition>
 
@@ -70,10 +78,17 @@
 
 <script setup>
 import { ref, onMounted, nextTick, onBeforeUnmount } from "vue";
-import { ElButton, ElDivider, ElInput, ElIcon } from "element-plus";
+import {
+  ElButton,
+  ElDivider,
+  ElInput,
+  ElIcon,
+  ElScrollbar,
+} from "element-plus";
 import { ArrowLeft, Plus } from "@element-plus/icons-vue";
 
 import { initBabylon, MonacoShaderEditor, Shader } from "@/service/shader";
+import { ElMessageBox } from "element-plus";
 
 const shaders = ref([]);
 const loading = ref(true);
@@ -182,6 +197,30 @@ const saveShader = async () => {
   goBack();
 };
 
+const removeShaderBackground = async (item) => {
+  ElMessageBox.confirm(
+    `确定要移除 "${item.title}" 这个 Shader 吗？`,
+    "确认移除",
+    {
+      confirmButtonText: "确认",
+      cancelButtonText: "取消",
+      type: "warning",
+    },
+  )
+    .then(async () => {
+      try {
+        await Shader.removeShaderBackground(item.title);
+        // 刷新列表
+        fetchList();
+      } catch (e) {
+        console.error("Failed to remove shader background:", e);
+      }
+    })
+    .catch(() => {
+      // 用户取消了操作
+    });
+};
+
 const setShaderBackground = (item) => {
   Shader.setShaderBackground(item.url);
   console.log("Set shader background:", item);
@@ -251,9 +290,10 @@ onBeforeUnmount(() => {
       position: absolute;
       left: 0;
       top: 0;
-      width: 100%;
-
+      right: 0;
+      bottom: 0;
       margin: 0; /* align to left-top inside view-wrapper */
+
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

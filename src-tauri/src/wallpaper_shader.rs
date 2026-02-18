@@ -1,20 +1,25 @@
 use base64::Engine;
 use std::fs;
-use std::path::PathBuf;
-use std::process::Command;
-use tauri::Manager;
 
-use crate::fs_helper::{read_folder_files, read_folder_folders};
+use crate::fs_helper::read_folder_folders;
 
 #[tauri::command]
-pub fn delete_wallpaper_shader(path: String) -> Result<(), String> {
-    let path_buf = PathBuf::from(&path);
+pub fn delete_wallpaper_shader(folder: String) -> Result<(), String> {
+    // 获取可执行文件所在目录
+    let exe_dir = std::env::current_exe()
+        .map_err(|e| format!("Failed to get executable path: {}", e))?
+        .parent()
+        .ok_or_else(|| "Failed to get parent directory".to_string())?
+        .to_path_buf();
 
-    if !path_buf.exists() {
-        return Err(format!("File not found: {}", path));
+    // 构建 wallpaper_shader 目录路径
+    let wallpaper_dir = exe_dir.join("wallpaper_shader").join(&folder);
+
+    if !wallpaper_dir.exists() {
+        return Err(format!("Folder not found: {}", folder));
     }
 
-    fs::remove_file(&path_buf).map_err(|e| format!("Failed to delete file: {}", e))?;
+    fs::remove_dir_all(&wallpaper_dir).map_err(|e| format!("Failed to delete folder: {}", e))?;
 
     Ok(())
 }
@@ -63,9 +68,6 @@ pub fn save_wallpaper_shader(
 
     let glsl_path = base_dir.join("shader.glsl");
     fs::write(&glsl_path, glsl).map_err(|e| format!("Failed to save glsl: {}", e))?;
-
-    let base64 = base_dir.join("base64.txt");
-    fs::write(&base64, &thumbnail).map_err(|e| format!("Failed to save base64: {}", e))?;
 
     // 解码 base64 并保存为 PNG 文件
     let thumbnail_path = base_dir.join("thumbnail.png");

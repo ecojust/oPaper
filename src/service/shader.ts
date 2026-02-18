@@ -422,7 +422,7 @@ export class Shader {
 
   static async newDraft() {
     return {
-      title: "draft_" + new Date().getTime(),
+      title: "draft_" + makeUniqueName(),
       code: `
         precision highp float;
         varying vec2 vUV;
@@ -436,6 +436,16 @@ export class Shader {
       `,
       thumbnail: "",
     };
+  }
+
+  static async removeShaderBackground(title: string) {
+    console.log("Removing shader background:", title);
+    try {
+      await invoke("delete_wallpaper_shader", { folder: title });
+    } catch (e) {
+      console.error("Failed to remove shader background:", e);
+      throw e;
+    }
   }
 
   static async setShaderBackground(path: string) {
@@ -452,6 +462,10 @@ export class Shader {
       console.log("set_shader_wallpaper_from_path: " + e);
     }
     await invoke("create_animation_wallpaper");
+  }
+
+  static async saveDefaultShaderBackground(code: string, thumbnail: string) {
+    //
   }
 
   static async saveShaderBackground(

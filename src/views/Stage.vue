@@ -3,7 +3,7 @@
     <div class="stage-header">
       <el-tabs v-model="activeTab" class="stage-tabs">
         <el-tab-pane label="静态壁纸" name="static" />
-        <el-tab-pane label="Shader壁纸" name="shader" />
+        <el-tab-pane label="着色器壁纸" name="shader" />
         <!-- <el-tab-pane label="三维壁纸" name="3d" /> -->
         <!-- <el-tab-pane label="在线壁纸" name="online" /> -->
       </el-tabs>
