@@ -10,6 +10,7 @@ import glslParser from "prettier-plugin-glsl";
 type BabylonHandle = {
   dispose: () => void;
   updateCode?: (code: string) => void;
+  sceneShot?: () => Promise<string | undefined>;
 };
 
 function makeUniqueName() {
@@ -230,7 +231,33 @@ export function initBabylon(
     }
   };
 
-  return { dispose, updateCode };
+  const sceneShot = () => {
+    // try {
+    //   const dataURL = engine.getRenderingCanvas()?.toDataURL("image/png");
+    //   return dataURL;
+    // } catch (e) {
+    //   console.warn("Failed to capture screenshot:", e);
+    //   return "";
+    // }
+
+    return new Promise<string>((resolve) => {
+      try {
+        BABYLON.Tools.CreateScreenshotUsingRenderTarget(
+          engine,
+          camera,
+          { width: 800, height: 450 },
+          function (data) {
+            resolve(data);
+          },
+        );
+      } catch (e) {
+        console.warn("Failed to capture screenshot:", e);
+        resolve("");
+      }
+    });
+  };
+
+  return { dispose, updateCode, sceneShot };
 }
 
 export class MonacoShaderEditor {
@@ -411,8 +438,10 @@ export class Shader {
     };
   }
 
-  static async setShaderBackground(path: string, lastConfig = {}) {
+  static async setShaderBackground(path: string) {
+    const lastConfig = await Shader.readConfig();
     try {
+      console.log("setShaderBackground", path);
       await invoke("set_config", {
         content: JSON.stringify({
           ...lastConfig,
@@ -424,9 +453,8 @@ export class Shader {
       console.log("set_shader_wallpaper_from_path: " + e);
     }
     await invoke("create_animation_wallpaper", {
-      type: "shader",
+      mode: "shader",
     });
-    // create_animation_wallpaper
   }
 
   static async saveShaderBackground(
@@ -435,8 +463,8 @@ export class Shader {
     thumbnail: string,
   ) {
     // thumbnail 是 base64 字符串，去掉前缀（如 "data:image/png;base64,"）
-    const base64Data = thumbnail.includes(",")
-      ? thumbnail.split(",")[1]
+    const base64Data = thumbnail.includes("base64,")
+      ? thumbnail.split("base64,")[1]
       : thumbnail;
 
     try {
@@ -459,10 +487,13 @@ export class Shader {
       if (folders instanceof Array === false) {
         throw new Error("Expected an array from read_wallpaper_shader");
       }
+      // 使用时间戳作为 cache busting，避免浏览器缓存旧的缩略图
+      const cacheBuster = Date.now();
       return folders.map((folderPath: any, index: number) => ({
         id: `${folderPath}`,
         title: folderPath.split("/").pop() || `本地图片 ${index + 1}`,
-        thumbnail: convertFileSrc(`${folderPath}/thumbnail.png`),
+        thumbnail:
+          convertFileSrc(`${folderPath}/thumbnail.png`) + `?t=${cacheBuster}`,
         url: convertFileSrc(`${folderPath}/shader.glsl`),
       }));
     } catch (e) {

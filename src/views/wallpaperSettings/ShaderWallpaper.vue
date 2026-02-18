@@ -93,9 +93,7 @@ const defaultCover =
 const fetchList = async () => {
   try {
     const localShaders = await Shader.getLocalShaderList(); // for debug
-    console.log("Local shaders:", localShaders);
-    // const res = await fetch("/shaders/list.json");
-    // const data = await res.json();
+
     shaders.value = localShaders;
   } catch (e) {
     console.error(e);
@@ -175,12 +173,7 @@ const recompileShader = async () => {
 };
 
 const saveShader = async () => {
-  const base64Data = document
-    .getElementById("babylon-canvas")
-    .toDataURL("image/png");
-  // .split(",")[1]; // 获取 Base64 数据
-
-  console.log("base64Data", base64Data);
+  const base64Data = await babylonHandle.sceneShot();
   await Shader.saveShaderBackground(
     currentShader.value.title,
     currentShader.value.code,
@@ -190,12 +183,7 @@ const saveShader = async () => {
 };
 
 const setShaderBackground = (item) => {
-  //
-  const path = item.path;
-  Shader.setShaderBackground(path, {
-    // any additional config can go here
-    mode: "shader",
-  });
+  Shader.setShaderBackground(item.url);
   console.log("Set shader background:", item);
 };
 

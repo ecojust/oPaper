@@ -52,10 +52,20 @@ pub fn save_wallpaper_shader(
 
     // 创建 wallpaper_shader 目录
     let base_dir = exe_dir.join("wallpaper_shader").join(folder_name);
+
+    // 如果目录已存在，先删除旧的文件，确保覆盖
+    if base_dir.exists() {
+        fs::remove_dir_all(&base_dir)
+            .map_err(|e| format!("Failed to remove existing directory: {}", e))?;
+    }
+
     fs::create_dir_all(&base_dir).map_err(|e| format!("Failed to create base directory: {}", e))?;
 
     let glsl_path = base_dir.join("shader.glsl");
     fs::write(&glsl_path, glsl).map_err(|e| format!("Failed to save glsl: {}", e))?;
+
+    let base64 = base_dir.join("base64.txt");
+    fs::write(&base64, &thumbnail).map_err(|e| format!("Failed to save base64: {}", e))?;
 
     // 解码 base64 并保存为 PNG 文件
     let thumbnail_path = base_dir.join("thumbnail.png");
