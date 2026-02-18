@@ -1,16 +1,26 @@
 use std::fs;
 use std::process::Command;
 
+// 获取 appdata 目录下的 oPaper 路径
+pub fn get_appdata_dir() -> Result<std::path::PathBuf, String> {
+    let app_data =
+        dirs::data_dir().ok_or_else(|| "Failed to get app data directory".to_string())?;
+
+    let app_dir = app_data.join("oPaper");
+
+    // 确保目录存在
+    fs::create_dir_all(&app_dir)
+        .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+
+    Ok(app_dir)
+}
+
 #[tauri::command]
 pub fn open_folder(path: String) -> Result<String, String> {
-    // 获取 resource 目录路径
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
-    let resource_dir = exe_dir.join(path);
+    let resource_dir = base_dir.join(path);
 
     // 确保目录存在
     fs::create_dir_all(&resource_dir)
@@ -46,13 +56,10 @@ pub fn open_folder(path: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn write_file(path: String, content: String) -> Result<String, String> {
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
-    let target_path = exe_dir.join(path);
+    let target_path = base_dir.join(path);
 
     std::fs::write(&target_path, &content).map_err(|e| format!("Failed to write file: {}", e))?;
     Ok("File written successfully".to_string())
@@ -60,13 +67,10 @@ pub fn write_file(path: String, content: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn read_file(path: String) -> Result<String, String> {
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
-    let target_path = exe_dir.join(path);
+    let target_path = base_dir.join(path);
 
     let content =
         std::fs::read_to_string(&target_path).map_err(|e| format!("Failed to read file: {}", e))?;

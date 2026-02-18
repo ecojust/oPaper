@@ -1,19 +1,15 @@
 use base64::Engine;
 use std::fs;
 
-use crate::fs_helper::read_folder_folders;
+use crate::fs_helper::{get_appdata_dir, read_folder_folders};
 
 #[tauri::command]
 pub fn delete_wallpaper_shader(folder: String) -> Result<(), String> {
-    // 获取可执行文件所在目录
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
     // 构建 wallpaper_shader 目录路径
-    let wallpaper_dir = exe_dir.join("wallpaper_shader").join(&folder);
+    let wallpaper_dir = base_dir.join("wallpaper_shader").join(&folder);
 
     if !wallpaper_dir.exists() {
         return Err(format!("Folder not found: {}", folder));
@@ -26,15 +22,11 @@ pub fn delete_wallpaper_shader(folder: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn read_wallpaper_shader() -> Result<Vec<String>, String> {
-    // 获取可执行文件所在目录
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
     // 构建 wallpaper_static 目录路径
-    let wallpaper_dir = exe_dir.join("wallpaper_shader");
+    let wallpaper_dir = base_dir.join("wallpaper_shader");
 
     // 使用 fs_helper 中的函数读取文件夹列表（
     let folders = read_folder_folders(wallpaper_dir.to_string_lossy().to_string())?;
@@ -48,15 +40,11 @@ pub fn save_wallpaper_shader(
     glsl: String,
     thumbnail: String,
 ) -> Result<String, String> {
-    // 获取当前可执行文件所在目录
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
     // 创建 wallpaper_shader 目录
-    let base_dir = exe_dir.join("wallpaper_shader").join(folder_name);
+    let base_dir = base_dir.join("wallpaper_shader").join(folder_name);
 
     // 如果目录已存在，先删除旧的文件，确保覆盖
     if base_dir.exists() {

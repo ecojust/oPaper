@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use tauri::Manager;
 
-use crate::fs_helper::read_folder_files;
+use crate::fs_helper::{get_appdata_dir, read_folder_files};
 
 #[tauri::command]
 pub fn delete_wallpaper_static(path: String) -> Result<(), String> {
@@ -20,15 +20,11 @@ pub fn delete_wallpaper_static(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn read_wallpaper_static() -> Result<Vec<String>, String> {
-    // 获取可执行文件所在目录
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
     // 构建 wallpaper_static 目录路径
-    let wallpaper_dir = exe_dir.join("wallpaper_static");
+    let wallpaper_dir = base_dir.join("wallpaper_static");
 
     // 使用 fs_helper 中的函数读取文件列表（已包含图片过滤和排序）
     let files = read_folder_files(wallpaper_dir.to_string_lossy().to_string())?;
@@ -54,15 +50,11 @@ pub fn read_wallpaper_static() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 pub fn copy_wallpaper_to_wallpaper_static(path: String) -> Result<String, String> {
-    // 获取当前可执行文件所在目录
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
     // 创建 wallpaper_static 目录
-    let resource_dir = exe_dir.join("wallpaper_static");
+    let resource_dir = base_dir.join("wallpaper_static");
     fs::create_dir_all(&resource_dir)
         .map_err(|e| format!("Failed to create resource directory: {}", e))?;
 
@@ -151,15 +143,11 @@ async fn download_image(url: &str) -> Result<Vec<u8>, String> {
 }
 
 fn save_temp_image(data: &[u8], file_name: String) -> Result<String, String> {
-    // 获取当前可执行文件所在目录
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get parent directory".to_string())?
-        .to_path_buf();
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
 
-    // 创建 wallpaper_static 目录
-    let resource_dir = exe_dir.join("temp");
+    // 创建 temp 目录
+    let resource_dir = base_dir.join("temp");
     fs::create_dir_all(&resource_dir)
         .map_err(|e| format!("Failed to create temp directory: {}", e))?;
 
