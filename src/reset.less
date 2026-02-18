@@ -1,0 +1,29 @@
+.pure-dialog {
+  .el-message-box {
+    //
+    --el-messagebox-width: auto;
+    width: auto !important;
+    max-width: auto !important;
+    padding: 0 !important;
+    border-radius: 8px;
+    overflow: hidden;
+    .el-message-box__header {
+      display: none;
+    }
+    .el-message-box__content {
+      .el-message-box__container {
+        > i {
+          display: none;
+        }
+        .el-message-box__message {
+          // width: auto !important;
+          max-width: auto !important;
+        }
+      }
+    }
+
+    .el-message-box__btns {
+      display: none;
+    }
+  }
+}

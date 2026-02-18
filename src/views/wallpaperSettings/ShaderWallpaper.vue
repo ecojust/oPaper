@@ -89,6 +89,7 @@ import { ArrowLeft, Plus } from "@element-plus/icons-vue";
 
 import { initBabylon, MonacoShaderEditor, Shader } from "@/service/shader";
 import { ElMessageBox } from "element-plus";
+import { sleep } from "@/utils/util";
 
 const shaders = ref([]);
 const loading = ref(true);
@@ -137,11 +138,12 @@ const createNewShader = async () => {
     currentShader.value = {
       title: draft.title,
       code: draft.code,
-      isNew: true, // 标记为新建
     };
     view.value = "detail";
     nextTick(() => {
-      initEditor();
+      sleep(100).then(() => {
+        initEditor();
+      });
     });
   } catch (e) {
     console.error("Failed to create new shader:", e);

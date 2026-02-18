@@ -7,6 +7,9 @@ import * as BABYLON from "@babylonjs/core";
 import * as monaco from "monaco-editor";
 import * as prettier from "prettier";
 import glslParser from "prettier-plugin-glsl";
+
+import Dialog from "./dialog";
+
 type BabylonHandle = {
   dispose: () => void;
   updateCode?: (code: string) => void;
@@ -14,9 +17,7 @@ type BabylonHandle = {
 };
 
 function makeUniqueName() {
-  return (
-    "customShader_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8)
-  );
+  return Math.random().toString(36).slice(2, 8);
 }
 
 export function initBabylon(
@@ -420,22 +421,41 @@ export class Shader {
     await Config.saveConfig(updates);
   }
 
+  static async getTemplates() {
+    try {
+      const response = await fetch("/shaders/default.json");
+      const templates = await response.json();
+      return templates;
+    } catch (e) {
+      console.error("Failed to load templates:", e);
+      return [];
+    }
+  }
+
+  static async loadTemplate(path: string) {
+    try {
+      const response = await fetch(path);
+      const code = await response.text();
+      return code;
+    } catch (e) {
+      console.error("Failed to load template:", e);
+      return null;
+    }
+  }
+
   static async newDraft() {
-    return {
-      title: "draft_" + makeUniqueName(),
-      code: `
-        precision highp float;
-        varying vec2 vUV;
-        uniform float iTime;
-        uniform vec2 iResolution;
-        void main(void) {
-          vec2 uv = vUV;
-          vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0.0,2.0,4.0));
-          gl_FragColor = vec4(col, 1.0);
-        }
-      `,
-      thumbnail: "",
-    };
+    try {
+      const template: any = await Dialog.chooseShaderTemplate();
+      console.log("Chosen template:", template);
+      return {
+        title: "s_" + makeUniqueName(),
+        code: template.code,
+        thumbnail: template.thumbnail,
+      };
+    } catch (e) {
+      // 用户取消选择，返回默认模板
+      throw new Error("用户取消选择");
+    }
   }
 
   static async removeShaderBackground(title: string) {
