@@ -12,26 +12,15 @@
     "4dev": "yarn tauri dev"
   },
   "dependencies": {
-    "@babel/parser": "^7.29.0",
-    "@babel/plugin-syntax-jsx": "^7.28.6",
-    "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@babylonjs/core": "^6.0.0",
     "@element-plus/icons-vue": "^2.3.2",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
-    "babel-prettier-parser": "^0.10.8",
-    "bilicaptain": "^0.7.2",
     "cron-schedule": "^6.0.0",
     "element-plus": "^2.11.1",
-    "gojs": "^3.1.4",
     "monaco-editor": "^0.55.1",
-    "pixi.js": "^8.15.0",
-    "prettier": "^3.8.1",
-    "prettier-plugin-babel": "^0.0.1-alpha.1",
-    "prettier-plugin-glsl": "^0.2.4",
     "vue": "^3.5.13",
-    "vue-router": "4",
-    "xlsx": "^0.18.5"
+    "vue-router": "4"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
