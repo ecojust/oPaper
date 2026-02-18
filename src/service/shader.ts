@@ -5,8 +5,6 @@ import Config from "@/service/config";
 
 import * as BABYLON from "@babylonjs/core";
 import * as monaco from "monaco-editor";
-import * as prettier from "prettier";
-import glslParser from "prettier-plugin-glsl";
 
 import Dialog from "./dialog";
 
@@ -347,11 +345,11 @@ export class MonacoShaderEditor {
     const code = model.getValue();
 
     try {
-      console.log("Formatting code with prettier...", prettier);
-      const formatted = await prettier.format(code, {
-        parser: "glsl-parser",
-        plugins: [glslParser],
-      });
+      // const formatted = await prettier.format(code, {
+      //   parser: "glsl-parser",
+      //   plugins: [glslParser],
+      // });
+      const formatted = code; // 暂时不格式化，直接返回原代码，避免 prettier glsl 插件导致的性能问题
       editor.setValue(formatted);
     } catch (e) {
       console.warn("Failed to format code with prettier:", e);

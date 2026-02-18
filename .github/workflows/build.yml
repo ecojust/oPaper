@@ -52,11 +52,11 @@ jobs:
 
       # Install pnpm globally
       - name: Install pnpm
-        run: npm install -g yarn
+        run: npm install -g pnpm
 
       # Install frontend dependencies
       - name: Install frontend dependencies
-        run: yarn install
+        run: pnpm install
 
       # Build the app
       - name: Build the app
