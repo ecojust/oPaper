@@ -22,7 +22,7 @@ export function initBabylon(
   canvas: HTMLCanvasElement,
   getFragmentSource: () => string,
 ): BabylonHandle {
-  const shaderName = makeUniqueName();
+  let shaderName = makeUniqueName();
 
   const engine = new BABYLON.Engine(canvas, true);
   const scene = new BABYLON.Scene(engine);
@@ -90,7 +90,7 @@ export function initBabylon(
   };
   window.addEventListener("resize", resizeHandler);
 
-  const createMaterialFromSource = (src: string) => {
+  const createMaterialFromSource = (src: string, name: string) => {
     // ensure fragment source exists and looks plausible
     const fragSource =
       src && src.includes("gl_FragColor")
@@ -107,14 +107,14 @@ export function initBabylon(
         }
       `;
 
-    BABYLON.Effect.ShadersStore[shaderName + "FragmentShader"] = fragSource;
+    BABYLON.Effect.ShadersStore[name + "FragmentShader"] = fragSource;
 
     const mat = new BABYLON.ShaderMaterial(
-      "mat",
+      "mat_" + name,
       scene,
       {
-        vertex: shaderName,
-        fragment: shaderName,
+        vertex: name,
+        fragment: name,
       },
       {
         attributes: ["position", "uv"],
@@ -131,7 +131,7 @@ export function initBabylon(
     return mat;
   };
 
-  material = createMaterialFromSource(getFragmentSource());
+  material = createMaterialFromSource(getFragmentSource(), shaderName);
   plane.material = material;
 
   const renderFn = () => {
@@ -187,14 +187,44 @@ export function initBabylon(
 
   const updateCode = (code: string) => {
     try {
-      // dispose old material and recreate
+      // 生成新的唯一 shader 名称，强制 Babylon 重新编译 shader
+      const newShaderName = makeUniqueName();
+
+      // 复制顶点 shader 到新的名称
+      BABYLON.Effect.ShadersStore[newShaderName + "VertexShader"] =
+        BABYLON.Effect.ShadersStore[shaderName + "VertexShader"];
+
+      // 使用新名称创建新的 material
+      const newMat = createMaterialFromSource(code, newShaderName);
+
+      // 更新 shader 名称
+      const oldShaderName = shaderName;
+      shaderName = newShaderName;
+
+      // 清理旧的 shader
+      try {
+        delete (BABYLON as any).Effect.ShadersStore[
+          oldShaderName + "FragmentShader"
+        ];
+        delete (BABYLON as any).Effect.ShadersStore[
+          oldShaderName + "VertexShader"
+        ];
+      } catch (e) {}
+
+      // 清理旧的 material
       if (material) {
         material.dispose();
         material = null;
       }
-      const newMat = createMaterialFromSource(code);
+
+      // 设置新的 material
       material = newMat;
-      plane.material = material;
+      plane.material = newMat;
+
+      console.log(
+        "Shader code updated successfully, new shader:",
+        newShaderName,
+      );
     } catch (e) {
       console.warn("failed to update shader code", e);
     }

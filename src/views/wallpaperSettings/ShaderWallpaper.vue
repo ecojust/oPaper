@@ -50,7 +50,12 @@
               <canvas id="babylon-canvas" class="babylon-canvas"></canvas>
             </div>
             <div class="right">
-              <el-button @click="saveShader" type="primary">保存</el-button>
+              <div class="button-bar">
+                <el-button @click="recompileShader" :loading="recompiling">
+                  重新编译
+                </el-button>
+                <el-button @click="saveShader" type="primary">保存</el-button>
+              </div>
               <el-divider />
               <div ref="monacoContainer" class="monaco-editor" />
             </div>
@@ -77,6 +82,7 @@ const currentShader = ref(null);
 const monacoContainer = ref(null);
 const currentCode = ref("");
 const config = ref({});
+const recompiling = ref(false);
 
 let babylonHandle = null;
 let monacoEditor = null;
@@ -152,11 +158,29 @@ const initEditor = () => {
   }
 };
 
+const recompileShader = async () => {
+  if (!babylonHandle || !babylonHandle.updateCode) {
+    console.warn("No babylon handle or updateCode function available");
+    return;
+  }
+  recompiling.value = true;
+  try {
+    // Update the shader code in Babylon
+    babylonHandle.updateCode(currentShader.value.code);
+  } catch (e) {
+    console.error("Failed to recompile shader:", e);
+  } finally {
+    recompiling.value = false;
+  }
+};
+
 const saveShader = async () => {
   const base64Data = document
     .getElementById("babylon-canvas")
-    .toDataURL("image/png")
-    .split(",")[1]; // 获取 Base64 数据
+    .toDataURL("image/png");
+  // .split(",")[1]; // 获取 Base64 数据
+
+  console.log("base64Data", base64Data);
   await Shader.saveShaderBackground(
     currentShader.value.title,
     currentShader.value.code,
@@ -360,8 +384,15 @@ onBeforeUnmount(() => {
         .right {
           width: 60%;
           padding-left: 16px;
+          display: flex;
+          flex-direction: column;
+          .button-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+          }
           .monaco-editor {
-            height: 100%;
+            flex: 1;
             border: 1px solid #e6e6e6;
             overflow: auto;
           }
