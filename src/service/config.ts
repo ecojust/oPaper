@@ -1,6 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { convertFileSrc } from "@tauri-apps/api/core";
-import { sleep } from "@/utils/util";
 
 export default class Config {
   static async readConfig() {

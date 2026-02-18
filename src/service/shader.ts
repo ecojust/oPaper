@@ -1,6 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-import { convertFileSrc } from "@tauri-apps/api/core";
-import { sleep } from "@/utils/util";
+import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import Config from "@/service/config";
 
 import * as BABYLON from "@babylonjs/core";
@@ -482,8 +480,8 @@ export class Shader {
     await invoke("create_animation_wallpaper");
   }
 
-  static async saveDefaultShaderBackground(code: string, thumbnail: string) {
-    //
+  static async saveDefaultShaderBackground(_code: string, _thumbnail: string) {
+    // Reserved for future use
   }
 
   static async saveShaderBackground(
