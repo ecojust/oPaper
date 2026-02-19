@@ -17,7 +17,7 @@
               </div>
               <!-- 现有 Shader 列表 -->
               <div v-for="item in shaders" :key="item.name" class="shader-item">
-                <div class="thumb" @click="openDetail(item)">
+                <div class="thumb" @click="setShaderBackground(item)">
                   <img
                     :src="item.thumbnail || defaultCover"
                     class="cover-image"
@@ -32,8 +32,8 @@
                       @click="removeShaderBackground(item)"
                       >移除</el-button
                     >
-                    <el-button size="small" @click="setShaderBackground(item)"
-                      >应用</el-button
+                    <el-button size="small" @click="openDetail(item)"
+                      >编辑</el-button
                     >
                   </div>
                 </div>
@@ -90,7 +90,7 @@ import {
 } from "element-plus";
 import { ArrowLeft, Plus } from "@element-plus/icons-vue";
 
-import { initBabylon, MonacoShaderEditor, Shader } from "@/service/shader";
+import { initBabylon, CodemirrorShaderEditor, Shader } from "@/service/shader";
 import { ElMessageBox } from "element-plus";
 import { sleep } from "@/utils/util";
 
@@ -167,7 +167,7 @@ const initEditor = () => {
   // initialize CodeMirror editor
   const container = monacoContainer.value;
   if (container) {
-    monacoEditor = new MonacoShaderEditor(
+    monacoEditor = new CodemirrorShaderEditor(
       container,
       currentShader.value.code,
       (code) => {
