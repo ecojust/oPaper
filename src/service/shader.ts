@@ -40,8 +40,17 @@ export function initBabylon(
 ): BabylonHandle {
   let shaderName = makeUniqueName();
 
-  const engine = new BABYLON.Engine(canvas, true);
+  const engine = new BABYLON.Engine(canvas, true, {
+    // 启用 preserveDrawingBuffer 可以提高性能，如果不需要截图可以设为 false
+    preserveDrawingBuffer: false,
+    // 禁用 stencil buffer 如果不需要
+    stencil: false,
+  });
   const scene = new BABYLON.Scene(engine);
+  // 禁用 scene 的自动清除，因为我们只渲染一个全屏 quad
+  scene.autoClear = false;
+  scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
+
   const camera = new BABYLON.FreeCamera(
     "cam",
     new BABYLON.Vector3(0, 0, -1),
@@ -85,24 +94,32 @@ export function initBabylon(
   `;
 
   let material: BABYLON.ShaderMaterial | null = null;
-  let start = Date.now();
+  // 使用 performance.now() 获得更高精度的时间
+  let start = performance.now();
+
+  // 预创建 Vector2 对象以避免每帧创建新对象（内存优化）
+  const resolutionVector = new BABYLON.Vector2(0, 0);
+  let needsResolutionUpdate = true;
 
   // update material/resolution when canvas resizes
+  // 使用防抖处理 resize 事件
+  let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
   const resizeHandler = () => {
-    try {
-      engine.resize();
-    } catch (e) {}
-    try {
-      setOrtho();
-    } catch (e) {}
-    try {
-      if (material && (material as any).setVector2) {
-        (material as any).setVector2(
-          "iResolution",
-          new BABYLON.Vector2(canvas.width, canvas.height),
-        );
-      }
-    } catch (e) {}
+    // 清除之前的 timeout
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+    }
+    // 防抖：延迟执行，实际的 resize 处理
+    resizeTimeout = setTimeout(() => {
+      try {
+        engine.resize();
+      } catch (e) {}
+      try {
+        setOrtho();
+      } catch (e) {}
+      // 标记需要更新 resolution
+      needsResolutionUpdate = true;
+    }, 16); // ~60fps 的帧时间
   };
   window.addEventListener("resize", resizeHandler);
 
@@ -151,19 +168,20 @@ export function initBabylon(
   plane.material = material;
 
   const renderFn = () => {
-    const now = (Date.now() - start) / 1000;
+    const now = (performance.now() - start) / 1000;
     try {
-      material &&
-        (material as any).setFloat &&
+      if (material) {
         (material as any).setFloat("iTime", now);
+      }
     } catch (e) {}
     try {
-      material &&
-        (material as any).setVector2 &&
-        (material as any).setVector2(
-          "iResolution",
-          new BABYLON.Vector2(canvas.width, canvas.height),
-        );
+      // 只在需要时更新 resolution（canvas 大小变化时）
+      if (needsResolutionUpdate && material) {
+        resolutionVector.x = canvas.width;
+        resolutionVector.y = canvas.height;
+        (material as any).setVector2("iResolution", resolutionVector);
+        needsResolutionUpdate = false;
+      }
     } catch (e) {}
     scene.render();
   };
@@ -171,34 +189,58 @@ export function initBabylon(
   engine.runRenderLoop(renderFn);
 
   const dispose = () => {
+    // 1. 停止渲染循环
     try {
       engine.stopRenderLoop(renderFn);
     } catch (e) {}
+
+    // 2. 清理 resize 监听
+    try {
+      window.removeEventListener("resize", resizeHandler);
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = null;
+      }
+    } catch (e) {}
+
+    // 3. 清理 material
     try {
       if (material) {
         material.dispose();
         material = null;
       }
     } catch (e) {}
+
+    // 4. 清理 plane
     try {
       plane.dispose();
     } catch (e) {}
+
+    // 5. 清理相机（显式清理，避免依赖 scene.dispose()）
+    try {
+      camera.dispose();
+    } catch (e) {}
+
+    // 6. 清理 scene
     try {
       scene.dispose();
     } catch (e) {}
+
+    // 7. 清理 engine
     try {
       engine.dispose();
     } catch (e) {}
-    try {
-      window.removeEventListener("resize", resizeHandler);
-    } catch (e) {}
-    // cleanup shaders store
+
+    // 8. 清理 shaders store
     try {
       delete (BABYLON as any).Effect.ShadersStore[
         shaderName + "FragmentShader"
       ];
       delete (BABYLON as any).Effect.ShadersStore[shaderName + "VertexShader"];
     } catch (e) {}
+
+    // 9. 清理引用，帮助 GC
+    shaderName = "";
   };
 
   const updateCode = (code: string) => {
