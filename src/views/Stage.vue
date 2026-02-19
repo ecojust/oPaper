@@ -17,11 +17,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import StaticWallpaper from "./wallpaperSettings/StaticWallpaper.vue";
 import ShaderWallpaper from "./wallpaperSettings/ShaderWallpaper.vue";
 import ThreeDWallpaper from "./wallpaperSettings/ThreeDWallpaper.vue";
-import OnlineWallpaper from "./wallpaperSettings/OnlineWallpaper.vue";
+import OnlineWallpaper from "./wallpaperSettings/HTMLWallpaper.vue";
+import Tool from "@/service/tool";
 
 const activeTab = ref("static");
 
@@ -33,6 +34,11 @@ const components = {
 };
 
 const activeComponent = computed(() => components[activeTab.value] || null);
+
+onMounted(() => {
+  //
+  Tool.get_system_stats();
+});
 </script>
 
 <style lang="less" scoped>
