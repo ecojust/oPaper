@@ -323,12 +323,20 @@ export class CodemirrorShaderEditor {
             "&": {
               height: "100%",
               fontSize: "13px",
+              display: "flex",
+              flexDirection: "column",
             },
             ".cm-scroller": {
               overflow: "auto",
+              flex: "1",
+              minHeight: "0",
             },
             ".cm-content": {
               fontFamily: "'Fira Code', 'Consolas', monospace",
+              flex: "1",
+            },
+            ".cm-gutters": {
+              flexShrink: 0,
             },
           }),
         ],

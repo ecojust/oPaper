@@ -536,6 +536,15 @@ onBeforeUnmount(() => {
             flex: 1;
             overflow: hidden;
             background: black;
+
+            /* 确保 CodeMirror 编辑器可以滚动 */
+            .cm-editor {
+              height: 100%;
+              overflow: hidden;
+            }
+            .cm-scroller {
+              overflow: auto !important;
+            }
           }
         }
       }
