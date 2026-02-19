@@ -156,17 +156,10 @@ const createNewShader = async () => {
 
 // 初始化编辑器（Babylon + Monaco）
 const initEditor = () => {
-  const canvas = document.getElementById("babylon-canvas");
-  if (canvas) {
-    try {
-      babylonHandle = initBabylon(canvas, () => currentShader.value.code);
-    } catch (e) {
-      console.error("init babylon failed", e);
-    }
-  }
   // initialize CodeMirror editor
   const container = monacoContainer.value;
   if (container) {
+    container.innerHTML = "";
     monacoEditor = new CodemirrorShaderEditor(
       container,
       currentShader.value.code,
@@ -174,6 +167,15 @@ const initEditor = () => {
         currentShader.value.code = code;
       },
     );
+  }
+
+  const canvas = document.getElementById("babylon-canvas");
+  if (canvas) {
+    try {
+      babylonHandle = initBabylon(canvas, () => currentShader.value.code);
+    } catch (e) {
+      console.error("init babylon failed", e);
+    }
   }
 };
 
