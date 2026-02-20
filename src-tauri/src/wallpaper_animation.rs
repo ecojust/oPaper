@@ -1,24 +1,27 @@
 // 动态壁纸窗口管理模块
 
+use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
-/// 读取配置文件获取mode参数
-fn get_config_mode() -> String {
-    // 尝试读取配置文件
-    let config = std::fs::read_to_string("config.json");
-    match config {
-        Ok(content) => {
-            // 尝试解析JSON获取mode字段
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-                if let Some(mode) = json.get("mode").and_then(|v| v.as_str()) {
-                    return mode.to_string();
-                }
-            }
-            "static".to_string()
-        }
-        Err(_) => "static".to_string(),
-    }
-}
+use crate::config::read_config;
+
+// /// 读取配置文件获取mode参数
+// fn get_config_mode() -> String {
+//     // 尝试读取配置文件
+//     let config = std::fs::read_to_string("config.json");
+//     match config {
+//         Ok(content) => {
+//             // 尝试解析JSON获取mode字段
+//             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+//                 if let Some(mode) = json.get("mode").and_then(|v| v.as_str()) {
+//                     return mode.to_string();
+//                 }
+//             }
+//             "static".to_string()
+//         }
+//         Err(_) => "static".to_string(),
+//     }
+// }
 
 #[cfg(target_os = "windows")]
 pub fn set_window_to_desktop(
@@ -33,7 +36,10 @@ pub fn set_window_to_desktop(
         WS_EX_TRANSPARENT,
     };
 
-    let mode = get_config_mode();
+    let config = read_config().unwrap_or_else(|_| "{}".to_string());
+    let obj: serde_json::Value =
+        serde_json::from_str(&config).unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+    let mode = obj.get("mode").and_then(|v| v.as_str()).unwrap_or("static");
     println!("Windows: Config mode = {}", mode);
 
     let hwnd = window.hwnd()?;
@@ -167,15 +173,18 @@ pub fn set_window_to_desktop(
     use cocoa::base::{id, NO, YES};
     use cocoa::foundation::NSInteger;
 
-    let mode = get_config_mode();
+    let config = read_config().unwrap_or_else(|_| "{}".to_string());
+    let obj: serde_json::Value =
+        serde_json::from_str(&config).unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+    let mode = obj.get("mode").and_then(|v| v.as_str()).unwrap_or("static");
     println!("macOS: Config mode = {}", mode);
 
     let ns_window = window.ns_window()? as id;
 
     unsafe {
         if mode == "html" {
-            // HTML 模式：置顶，不忽略鼠标事件
-            let desktop_top_level: NSInteger = -2147483648 + 30 + 11110000;
+            // HTML 模式：设置窗口层级为 0（在桌面图标之上），允许鼠标交互
+            let desktop_top_level: NSInteger = 0;
             ns_window.setLevel_(desktop_top_level);
 
             println!(
