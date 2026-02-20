@@ -282,7 +282,6 @@ onBeforeUnmount(() => {
 .shader-wallpaper {
   position: relative;
   /* add padding inside the component and include it in sizing to avoid overflow */
-  padding: 20px;
   box-sizing: border-box;
   width: 100%;
   /* ensure the component fits the viewport and doesn't cause page scroll */
@@ -292,25 +291,27 @@ onBeforeUnmount(() => {
   // background: red;
 
   .view-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: 20px;
+    // position: absolute;
+    // top: 0;
+    // left: 0;
+    // right: 0;
+    // bottom: 0;
+    // padding: 20px;
 
     /* ensure both list and detail occupy the same box */
     /* remove fixed min-height so it fits inside viewport */
     width: auto;
     .wallpaper-list {
-      position: absolute;
-      left: 0;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      margin: 0; /* align to left-top inside view-wrapper */
+      // position: absolute;
+      // left: 0;
+      // top: 0;
+      // right: 0;
+      // bottom: 0;
+      // margin: 0; /* align to left-top inside view-wrapper */
 
       .grid {
+        padding: 20px;
+
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 16px;

@@ -4,24 +4,7 @@ use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
 use crate::config::read_config;
-
-// /// 读取配置文件获取mode参数
-// fn get_config_mode() -> String {
-//     // 尝试读取配置文件
-//     let config = std::fs::read_to_string("config.json");
-//     match config {
-//         Ok(content) => {
-//             // 尝试解析JSON获取mode字段
-//             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-//                 if let Some(mode) = json.get("mode").and_then(|v| v.as_str()) {
-//                     return mode.to_string();
-//                 }
-//             }
-//             "static".to_string()
-//         }
-//         Err(_) => "static".to_string(),
-//     }
-// }
+use crate::tool::wait_for_window_closed;
 
 #[cfg(target_os = "windows")]
 pub fn set_window_to_desktop(
@@ -297,20 +280,23 @@ pub fn create_animation_window(
 pub async fn create_animation_wallpaper(app: tauri::AppHandle) -> Result<String, String> {
     // 如果已存在 background 窗口，先关闭它
     if let Some(window) = app.get_webview_window("background") {
-        // window
-        //     .close()
-        //     .map_err(|e| format!("Failed to close window: {}", e))?;
         window
-            .reload()
-            .map_err(|e| format!("Failed to reload window: {}", e))?;
-        Ok("The background window reloaded successfully".to_string())
+            .close()
+            .map_err(|e| format!("Failed to close window: {}", e))?;
+
+        // 等待窗口完全关闭
+        wait_for_window_closed(&app, "background", 2000)
+            .map_err(|e| format!("Failed to wait for window close: {}", e))?;
+
+        println!("Background window closed successfully");
     } else {
-        println!("No existing background window found, creating a new one");
-        // 创建新窗口
-        match create_animation_window(&app) {
-            Ok(_) => Ok("Animation wallpaper initialized successfully".to_string()),
-            Err(e) => Err(format!("Failed to initialize animation wallpaper: {}", e)),
-        }
+        println!("No existing background window found");
+    }
+
+    // 创建新窗口
+    match create_animation_window(&app) {
+        Ok(_) => Ok("Animation wallpaper initialized successfully".to_string()),
+        Err(e) => Err(format!("Failed to initialize animation wallpaper: {}", e)),
     }
 }
 

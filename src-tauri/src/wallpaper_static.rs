@@ -4,6 +4,7 @@ use std::process::Command;
 use tauri::Manager;
 
 use crate::fs_helper::{get_appdata_dir, read_folder_files};
+use crate::tool::wait_for_window_closed;
 
 #[tauri::command]
 pub fn delete_wallpaper_static(path: String) -> Result<(), String> {
@@ -82,6 +83,12 @@ pub async fn set_static_wallpaper_from_url(
         window
             .close()
             .map_err(|e| format!("Failed to close background window: {}", e))?;
+
+        // 等待窗口完全关闭
+        wait_for_window_closed(&app, "background", 2000)
+            .map_err(|e| format!("Failed to wait for window close: {}", e))?;
+
+        println!("Background window closed successfully");
     }
 
     // 下载图片
@@ -109,6 +116,12 @@ pub fn set_static_wallpaper_from_path(
         window
             .close()
             .map_err(|e| format!("Failed to close background window: {}", e))?;
+
+        // 等待窗口完全关闭
+        wait_for_window_closed(&app, "background", 2000)
+            .map_err(|e| format!("Failed to wait for window close: {}", e))?;
+
+        println!("Background window closed successfully");
     }
 
     let path_buf = PathBuf::from(&path);

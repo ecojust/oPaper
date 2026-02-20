@@ -1,6 +1,37 @@
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use sysinfo::System;
+use tauri::Manager;
+
+/// 等待窗口完全关闭的辅助函数
+pub fn wait_for_window_closed(
+    app: &tauri::AppHandle,
+    window_label: &str,
+    max_wait_ms: u64,
+) -> Result<(), String> {
+    use std::time::Instant;
+    let start = Instant::now();
+    let check_interval_ms = 50;
+
+    while start.elapsed().as_millis() < max_wait_ms as u128 {
+        if app.get_webview_window(window_label).is_none() {
+            // 窗口已关闭
+            return Ok(());
+        }
+        // 短暂等待后再次检查
+        std::thread::sleep(std::time::Duration::from_millis(check_interval_ms));
+    }
+
+    // 超时后再次检查，如果窗口仍然存在，返回错误
+    if app.get_webview_window(window_label).is_some() {
+        Err(format!(
+            "Window '{}' did not close within {}ms",
+            window_label, max_wait_ms
+        ))
+    } else {
+        Ok(())
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct SystemStats {

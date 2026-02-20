@@ -354,7 +354,7 @@ onBeforeUnmount(() => {
 <style lang="less">
 .html-wallpaper {
   position: relative;
-  padding: 20px;
+  // padding: 20px;
   box-sizing: border-box;
   width: 100%;
   height: 100%;
@@ -366,7 +366,7 @@ onBeforeUnmount(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    margin: 20px;
+    // margin: 20px;
     width: auto;
 
     .wallpaper-list {
@@ -378,6 +378,8 @@ onBeforeUnmount(() => {
       margin: 0;
 
       .grid {
+        padding: 20px;
+
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 16px;
@@ -401,6 +403,11 @@ onBeforeUnmount(() => {
           display: flex;
           align-items: center;
           justify-content: center;
+          img {
+            height: 100%;
+            object-fit: contain;
+            // width: 100%;
+          }
         }
         .cover-image {
           width: 100%;
