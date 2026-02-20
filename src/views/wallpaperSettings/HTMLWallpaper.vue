@@ -69,6 +69,7 @@
           <div class="detail">
             <div class="left">
               <div class="preview-container">
+                {{ previewUrl }}
                 <iframe
                   v-if="previewUrl"
                   ref="iframeRef"

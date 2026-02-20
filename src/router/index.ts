@@ -1,7 +1,6 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import Stage from "../views/Stage.vue";
 import Background from "../views/Background.vue";
-import BackgroundHTML from "../views/BackgroundHTML.vue";
 
 const routes = [
   {
@@ -14,11 +13,6 @@ const routes = [
     path: "/background",
     name: "Background",
     component: Background,
-  },
-  {
-    path: "/background_html",
-    name: "backgroundHTML",
-    component: BackgroundHTML,
   },
 ];
 

@@ -171,7 +171,7 @@ onUnmounted(() => {
   /* border:1px solid red; */
   background: black;
   .log {
-    // display: none;
+    display: none;
   }
 }
 </style>
