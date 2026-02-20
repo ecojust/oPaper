@@ -2,15 +2,15 @@
 mod config;
 mod fetch;
 pub mod fs_helper;
+mod tool;
 mod wallpaper_animation;
 mod wallpaper_shader;
 mod wallpaper_static;
-mod tool;
 
 use config::{read_config, set_config};
 use fetch::{fetch_json, fetch_request};
 use fs_helper::{open_folder, read_file};
-use tool::{get_system_stats, };
+use tool::{get_system_stats, open_executable};
 
 use wallpaper_animation::{create_animation_wallpaper, destroy_animation_wallpaper};
 use wallpaper_shader::{delete_wallpaper_shader, read_wallpaper_shader, save_wallpaper_shader};
@@ -56,8 +56,8 @@ pub fn run() {
             create_animation_wallpaper,
             destroy_animation_wallpaper,
             // tool
-            get_system_stats
-          
+            get_system_stats,
+            open_executable
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

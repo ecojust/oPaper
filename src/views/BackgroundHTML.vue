@@ -27,6 +27,7 @@ const handleInvoke = async (id, method, payload) => {
   try {
     switch (method) {
       case "get_system_stats":
+      case "open_executable":
         const result = await invoke(method, payload || {});
         // 返回结果给 iframe
         sendToIframe({
@@ -38,6 +39,7 @@ const handleInvoke = async (id, method, payload) => {
         break;
 
       default:
+        console.log(`${method}: invalid method request!`);
         sendToIframe({
           id,
           code: 404,
@@ -47,6 +49,7 @@ const handleInvoke = async (id, method, payload) => {
         break;
     }
   } catch (error) {
+    console.log(`${method}: something error in shell`);
     sendToIframe({
       id,
       code: 500,

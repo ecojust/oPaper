@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::process::Command;
 use sysinfo::System;
 
 #[derive(Serialize, Deserialize)]
@@ -32,4 +33,33 @@ pub fn get_system_stats() -> Result<SystemStats, String> {
         memory_usage_percent,
         cpu_usage_percent,
     })
+}
+
+#[tauri::command]
+pub fn open_executable(path: String) -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("cmd")
+            .args(["/C", "start", "", &path])
+            .spawn()
+            .map_err(|e| format!("Failed to execute: {}", e))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to execute: {}", e))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to execute: {}", e))?;
+    }
+
+    Ok(format!("Successfully opened: {}", path))
 }

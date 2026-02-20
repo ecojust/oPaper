@@ -37,7 +37,8 @@ const activeComponent = computed(() => components[activeTab.value] || null);
 
 onMounted(() => {
   //
-  Tool.get_system_stats();
+  // Tool.get_system_stats();
+  // Tool.open_executable("/Applications/Google Chrome.app");
 });
 </script>
 

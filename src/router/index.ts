@@ -7,8 +7,8 @@ const routes = [
   {
     path: "/",
     name: "Stage",
-    component: Stage,
-    // component: BackgroundHTML,
+    // component: Stage,
+    component: BackgroundHTML,
   },
   {
     path: "/background",
