@@ -196,6 +196,11 @@ export class HTML {
     }
   }
 
+  static async saveTempHtml(content: string) {
+    const path = await invoke("save_temp_html", { content: content });
+    return convertFileSrc(path as string);
+  }
+
   static async getLocalHTMLList() {
     try {
       const folders = await invoke("read_wallpaper_html");

@@ -1,9 +1,8 @@
 use std::fs;
-use std::path::PathBuf;
 
 use base64::Engine;
 
-use crate::fs_helper::read_folder_folders;
+use crate::fs_helper::{get_appdata_dir, read_folder_folders};
 
 /// 删除 HTML 壁纸文件夹
 #[tauri::command]
@@ -82,6 +81,28 @@ pub fn write_wallpaper_html_file(folder_path: String, html: String) -> Result<()
     fs::write(&file_path, html).map_err(|e| format!("Failed to write HTML file: {}", e))?;
 
     Ok(())
+}
+
+/// 写入 HTML 文件内容
+#[tauri::command]
+pub fn save_temp_html(content: String) -> Result<String, String> {
+    // 获取 appdata 目录下的 oPaper 路径
+    let base_dir = get_appdata_dir()?;
+
+    // 创建 temp 目录
+    let resource_dir = base_dir.join("temp");
+    fs::create_dir_all(&resource_dir)
+        .map_err(|e| format!("Failed to create temp directory: {}", e))?;
+
+    let file_name = format!("index_{}.html", chrono::Utc::now().timestamp());
+    let html_path = resource_dir.join(file_name);
+
+    fs::write(&html_path, content).map_err(|e| format!("Failed to save image: {}", e))?;
+
+    html_path
+        .to_str()
+        .ok_or_else(|| "Invalid path".to_string())
+        .map(|s| s.to_string())
 }
 
 /// 保存 HTML 壁纸

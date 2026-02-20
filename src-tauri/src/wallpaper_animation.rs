@@ -1,6 +1,5 @@
 // 动态壁纸窗口管理模块
 
-use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
 use crate::config::read_config;

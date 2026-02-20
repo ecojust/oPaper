@@ -15,8 +15,8 @@ use tool::{get_system_stats, open_executable};
 
 use wallpaper_animation::{create_animation_wallpaper, destroy_animation_wallpaper};
 use wallpaper_html::{
-    delete_wallpaper_html, read_wallpaper_html, read_wallpaper_html_file, save_wallpaper_html,
-    write_wallpaper_html_file,
+    delete_wallpaper_html, read_wallpaper_html, read_wallpaper_html_file, save_temp_html,
+    save_wallpaper_html, write_wallpaper_html_file,
 };
 use wallpaper_shader::{delete_wallpaper_shader, read_wallpaper_shader, save_wallpaper_shader};
 use wallpaper_static::{
@@ -58,6 +58,7 @@ pub fn run() {
             delete_wallpaper_shader,
             save_wallpaper_shader,
             // wallpaper_html
+            save_temp_html,
             read_wallpaper_html,
             delete_wallpaper_html,
             save_wallpaper_html,
