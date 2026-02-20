@@ -12,13 +12,86 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import Config from "@/service/config";
 import { initBabylon, Shader } from "@/service/shader";
+import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 
 import { oPaper } from "../utils/oPaper";
 
 const parent = ref();
 const msg = ref([]);
-
 let instance = null;
+let iframe = null;
+
+// 向 iframe 发送消息
+const sendToIframe = (data) => {
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage(data, "*");
+  }
+};
+
+// 处理来自 iframe 的调用请求
+const handleInvoke = async (id, method, payload) => {
+  msg.value.push("invoke", method);
+
+  try {
+    switch (method) {
+      case "get_system_stats":
+      case "open_executable":
+        msg.value.push("invoke", payload);
+
+        const result = await invoke(method, payload || {});
+
+        msg.value.push("handleInvoke", result);
+
+        // 返回结果给 iframe
+        sendToIframe({
+          id,
+          code: 200,
+          data: result,
+          msg: "get return from shell",
+        });
+        break;
+
+      default:
+        console.log(`${method}: invalid method request!`);
+        sendToIframe({
+          id,
+          code: 404,
+          data: null,
+          msg: "invalid method request!",
+        });
+        break;
+    }
+  } catch (error) {
+    console.log(`${method}: something error in shell`);
+    sendToIframe({
+      id,
+      code: 500,
+      data: null,
+      msg: "something error in shell",
+    });
+  }
+};
+
+// 监听来自 iframe 的消息
+const handleMessage = async (event) => {
+  // 验证消息来源
+  if (
+    !iframe ||
+    !iframe.contentWindow ||
+    event.source !== iframe.contentWindow
+  ) {
+    return;
+  }
+  const data = event.data;
+
+  msg.value.push(data.method);
+
+  // 处理调用请求
+  if (data && data.id && data.method) {
+    await handleInvoke(data.id, data.method, data.payload);
+    return;
+  }
+};
 
 const initBackground = async () => {
   msg.value.push("initBackground");
@@ -51,6 +124,18 @@ const initBackground = async () => {
         return code;
       });
       break;
+
+    case "html":
+      window.addEventListener("message", handleMessage);
+
+      iframe = document.createElement("iframe");
+      iframe.src = convertFileSrc(config.htmlPath);
+      iframe.border = "none";
+      iframe.style.cssText =
+        "width:100%;height:100%;display:block;border-width:0px;";
+
+      parent.value.appendChild(iframe);
+      break;
     default:
       console.warn("Unknown background type:", type);
   }
@@ -64,6 +149,10 @@ onMounted(() => {
   } catch (error) {
     console.error("Failed to initialize background:", error);
   }
+});
+
+onUnmounted(() => {
+  iframe && window.removeEventListener("message", handleMessage);
 });
 </script>
 

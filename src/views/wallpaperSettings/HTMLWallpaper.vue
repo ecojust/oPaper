@@ -196,7 +196,6 @@ const fetchList = async () => {
 
 // 打开详情页
 const openDetail = async (item) => {
-  console.log("openDetail", item);
   currentHTML.value = item;
   currentHTML.value.code = await HTML.getHTMLContent(item.url);
   view.value = "detail";
@@ -208,8 +207,6 @@ const openDetail = async (item) => {
 // 创建新的 HTML
 const createNewHTML = async () => {
   currentHTML.value = await HTML.newDraft();
-
-  console.log("currentHTML", currentHTML.value);
   view.value = "detail";
   nextTick(() => {
     sleep(100).then(() => {
@@ -276,17 +273,11 @@ const saveHTML = async () => {
       }
     }
 
-    console.log("savehtml", thumbnailBase64);
-
     await HTML.saveHTMLBackground(
       currentHTML.value.title,
       currentHTML.value.code,
       thumbnailBase64,
     );
-    ElMessageBox.alert("保存成功！", "提示", {
-      confirmButtonText: "确定",
-      type: "success",
-    });
 
     goBack();
   } catch (e) {
@@ -331,7 +322,7 @@ const removeHTMLBackground = async (item) => {
 
 // 设置为桌面壁纸
 const setHTMLBackground = async (item) => {
-  await HTML.setHTMLBackground(item.path);
+  await HTML.setHTMLBackground(item.url);
 };
 
 const goBack = () => {

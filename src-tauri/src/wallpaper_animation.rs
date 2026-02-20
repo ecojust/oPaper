@@ -2,6 +2,24 @@
 
 use tauri::Manager;
 
+/// 读取配置文件获取mode参数
+fn get_config_mode() -> String {
+    // 尝试读取配置文件
+    let config = std::fs::read_to_string("config.json");
+    match config {
+        Ok(content) => {
+            // 尝试解析JSON获取mode字段
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(mode) = json.get("mode").and_then(|v| v.as_str()) {
+                    return mode.to_string();
+                }
+            }
+            "static".to_string()
+        }
+        Err(_) => "static".to_string(),
+    }
+}
+
 #[cfg(target_os = "windows")]
 pub fn set_window_to_desktop(
     window: &tauri::WebviewWindow,
@@ -10,6 +28,9 @@ pub fn set_window_to_desktop(
     use std::os::windows::ffi::OsStrExt;
     use winapi::shared::minwindef::LPARAM;
     use winapi::um::winuser::{FindWindowW, SendMessageW, SetParent};
+
+    let mode = get_config_mode();
+    println!("Windows: Config mode = {}", mode);
 
     let hwnd = window.hwnd()?;
     let hwnd = hwnd.0 as winapi::shared::windef::HWND;
@@ -93,31 +114,63 @@ pub fn set_window_to_desktop(
     use cocoa::base::{id, NO, YES};
     use cocoa::foundation::NSInteger;
 
+    let mode = get_config_mode();
+    println!("macOS: Config mode = {}", mode);
+
     let ns_window = window.ns_window()? as id;
 
     unsafe {
-        // 设置窗口层级到桌面级别
-        let desktop_level: NSInteger = -2147483648 + 30;
-        ns_window.setLevel_(desktop_level);
+        if mode == "html" {
+            // HTML 模式：置顶，不忽略鼠标事件
+            let desktop_top_level: NSInteger = -2147483648 + 30 + 100;
+            ns_window.setLevel_(desktop_top_level);
 
-        println!("macOS: Set window level to {}", desktop_level);
+            println!(
+                "macOS: HTML mode - Set window level to {}",
+                desktop_top_level
+            );
 
-        // 设置窗口行为
-        let collection_behavior =
-            NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
-                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
-                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle;
-        ns_window.setCollectionBehavior_(collection_behavior);
+            // 设置窗口行为（不过滤鼠标事件）
+            let collection_behavior =
+                NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
+                    | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
+                    | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle;
+            ns_window.setCollectionBehavior_(collection_behavior);
 
-        // 禁用窗口阴影
-        ns_window.setHasShadow_(NO);
+            // 禁用窗口阴影
+            ns_window.setHasShadow_(NO);
 
-        // 忽略鼠标事件
-        ns_window.setIgnoresMouseEvents_(YES);
+            // 不忽略鼠标事件（允许交互）
+            ns_window.setIgnoresMouseEvents_(NO);
 
-        // 设置窗口透明度
-        ns_window.setOpaque_(YES);
-        ns_window.setAlphaValue_(1.0);
+            // 设置窗口透明度
+            ns_window.setOpaque_(YES);
+            ns_window.setAlphaValue_(1.0);
+        } else {
+            // Shader 或其他模式：置底，忽略鼠标事件
+            // 设置窗口层级到桌面级别
+            let desktop_level: NSInteger = -2147483648 + 30;
+            ns_window.setLevel_(desktop_level);
+
+            println!("macOS: Shader mode - Set window level to {}", desktop_level);
+
+            // 设置窗口行为
+            let collection_behavior =
+                NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
+                    | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
+                    | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle;
+            ns_window.setCollectionBehavior_(collection_behavior);
+
+            // 禁用窗口阴影
+            ns_window.setHasShadow_(NO);
+
+            // 忽略鼠标事件
+            ns_window.setIgnoresMouseEvents_(YES);
+
+            // 设置窗口透明度
+            ns_window.setOpaque_(YES);
+            ns_window.setAlphaValue_(1.0);
+        }
     }
 
     Ok(())
