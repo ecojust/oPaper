@@ -27,7 +27,11 @@ pub fn set_window_to_desktop(
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
     use winapi::shared::minwindef::LPARAM;
-    use winapi::um::winuser::{FindWindowW, SendMessageW, SetParent};
+    use winapi::um::winuser::{
+        FindWindowW, SendMessageW, SetParent, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE,
+        HWND_BOTTOM, HWND_TOPMOST, SWP_NOMOVE, SWP_NOSENDCHANGING, SWP_NOSIZE, WS_EX_LAYERED,
+        WS_EX_TRANSPARENT,
+    };
 
     let mode = get_config_mode();
     println!("Windows: Config mode = {}", mode);
@@ -67,10 +71,59 @@ pub fn set_window_to_desktop(
             };
 
             SetParent(hwnd, parent);
+
+            if mode == "html" {
+                // HTML 模式：置顶窗口，允许鼠标交互
+                // 移除透明属性，确保鼠标事件可以穿透
+                let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+                SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style & !(WS_EX_TRANSPARENT as isize));
+
+                // 将窗口置顶
+                SetWindowPos(
+                    hwnd,
+                    HWND_TOPMOST,
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_NOSIZE | SWP_NOMOVE | SWP_NOSENDCHANGING,
+                );
+
+                println!("Windows: HTML mode - Set window to topmost");
+            } else {
+                // Shader/static 模式：置底窗口，忽略鼠标事件
+                // 设置窗口为透明，这样鼠标事件会穿透到桌面
+                let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+                SetWindowLongPtrW(
+                    hwnd,
+                    GWL_EXSTYLE,
+                    ex_style | WS_EX_LAYERED as isize | WS_EX_TRANSPARENT as isize,
+                );
+
+                // 将窗口置底
+                SetWindowPos(
+                    hwnd,
+                    HWND_BOTTOM,
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_NOSIZE | SWP_NOMOVE | SWP_NOSENDCHANGING,
+                );
+
+                println!("Windows: Shader/Static mode - Set window to bottom with transparent");
+            }
         }
     }
 
     Ok(())
+}
+
+// 获取窗口扩展样式的辅助函数
+#[cfg(target_os = "windows")]
+unsafe fn GetWindowLongPtrW(hwnd: winapi::shared::windef::HWND, nindex: i32) -> isize {
+    use winapi::um::winuser::GetWindowLongW;
+    GetWindowLongW(hwnd, nindex) as isize
 }
 
 #[cfg(target_os = "windows")]
@@ -122,7 +175,7 @@ pub fn set_window_to_desktop(
     unsafe {
         if mode == "html" {
             // HTML 模式：置顶，不忽略鼠标事件
-            let desktop_top_level: NSInteger = -2147483648 + 30 + 100;
+            let desktop_top_level: NSInteger = -2147483648 + 30 + 11110000;
             ns_window.setLevel_(desktop_top_level);
 
             println!(

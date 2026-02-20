@@ -159,6 +159,46 @@
       .loading {
         animation: pulse 1.5s ease-in-out infinite;
       }
+
+      .test-button {
+        margin-top: 20px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .test-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .test-button:active {
+        transform: translateY(0);
+      }
+
+      .click-feedback {
+        margin-top: 12px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        color: #4facfe;
+        font-size: 13px;
+        text-align: center;
+        display: none;
+      }
+
+      .click-feedback.show {
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -229,6 +269,14 @@
             <span>Total: <span id="memory-total">0 MB</span></span>
           </div>
         </div>
+
+        <!-- Test Button for Click Event -->
+        <button class="test-button" id="test-button">
+          🧪 Test Click Event
+        </button>
+        <div class="click-feedback" id="click-feedback">
+          Click event triggered! 🎉
+        </div>
       </div>
 
       <!-- Error State (Hidden by default) -->
@@ -294,6 +342,8 @@
         memoryProgress: document.getElementById("memory-progress"),
         memoryUsed: document.getElementById("memory-used"),
         memoryTotal: document.getElementById("memory-total"),
+        testButton: document.getElementById("test-button"),
+        clickFeedback: document.getElementById("click-feedback"),
       };
 
       function updatePanel(data) {
@@ -363,6 +413,32 @@
         // setInterval(updateStats, 2000);
 
         // invoke("open_executable", { path: "/Applications/Google Chrome.app" });
+
+        // Test button click event
+        if (elements.testButton) {
+          elements.testButton.addEventListener("click", () => {
+            // Show feedback
+            elements.clickFeedback.classList.add("show");
+
+            // Log to console for debugging
+            console.log("Test button clicked! Click event is working.");
+
+            // Optional: Send event to backend
+            invoke("on_wallpaper_click", { source: "test-button" }).catch(
+              (err) => {
+                console.log(
+                  "Could not invoke on_wallpaper_click:",
+                  err.message,
+                );
+              },
+            );
+
+            // Hide feedback after 2 seconds
+            setTimeout(() => {
+              elements.clickFeedback.classList.remove("show");
+            }, 2000);
+          });
+        }
       };
     </script>
   </body>
