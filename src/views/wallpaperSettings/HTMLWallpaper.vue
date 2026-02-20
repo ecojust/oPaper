@@ -72,7 +72,7 @@
                 <iframe
                   v-if="previewUrl"
                   ref="iframeRef"
-                  :srcdoc="previewUrl"
+                  :src="previewUrl"
                   class="html-preview"
                   sandbox="allow-scripts allow-same-origin"
                 ></iframe>
@@ -237,8 +237,9 @@ const initEditor = async () => {
 const previewHTML = async () => {
   previewing.value = true;
   try {
-    // 直接使用HTML代码内容，通过srcdoc属性加载
-    previewUrl.value = currentHTML.value.code;
+    // 使用 data URL 方式加载 HTML，避免 CSP 和特殊字符问题
+    const encodedHtml = encodeURIComponent(currentHTML.value.code);
+    previewUrl.value = `data:text/html;charset=utf-8,${encodedHtml}`;
   } catch (e) {
     console.error("Preview failed:", e);
   } finally {
