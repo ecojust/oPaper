@@ -71,15 +71,10 @@
               <div class="preview-container">
                 {{ previewUrl }}
                 <iframe
-                  v-if="previewUrl"
                   ref="iframeRef"
-                  :src="previewUrl"
                   class="html-preview"
                   sandbox="allow-scripts allow-same-origin"
                 ></iframe>
-                <div v-else class="preview-placeholder">
-                  <p>点击"预览"查看效果</p>
-                </div>
               </div>
             </div>
             <div class="right">
@@ -239,11 +234,21 @@ const previewHTML = async () => {
   previewing.value = true;
   try {
     // 将当前代码保存到临时 Blob URL 进行预览
-    const blob = new Blob([currentHTML.value.code], { type: "text/html" });
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value);
+    // const blob = new Blob([currentHTML.value.code], { type: "text/html" });
+    // if (previewUrl.value) {
+    //   URL.revokeObjectURL(previewUrl.value);
+    // }
+    // previewUrl.value = URL.createObjectURL(blob);
+    console.log(iframeRef.value);
+    const doc =
+      iframeRef.value.contentDocument || iframeRef.value.contentWindow.document;
+    doc.open();
+    // 清空整个文档内容后再写入
+    if (doc.documentElement) {
+      doc.documentElement.innerHTML = "";
     }
-    previewUrl.value = URL.createObjectURL(blob);
+    doc.write(currentHTML.value.code);
+    doc.close();
   } catch (e) {
     console.error("Preview failed:", e);
   } finally {
