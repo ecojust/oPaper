@@ -22,8 +22,6 @@ import {
 } from "@codemirror/language";
 import { builtinHTMLBackgrounds } from "./const";
 
-import Dialog from "./dialog";
-
 function makeUniqueName() {
   return Math.random().toString(36).slice(2, 8);
 }

@@ -167,7 +167,7 @@ pub fn set_window_to_desktop(
     unsafe {
         if mode == "html" {
             // HTML 模式：设置窗口层级为 0（在桌面图标之上），允许鼠标交互
-            let desktop_top_level: NSInteger = 0;
+            let desktop_top_level: NSInteger = -30;
             ns_window.setLevel_(desktop_top_level);
 
             println!(
