@@ -154,6 +154,7 @@ export class HTML {
         content: JSON.stringify({
           ...lastConfig,
           mode: "html",
+          loop: false,
           htmlPath: path,
         }),
       });

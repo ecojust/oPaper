@@ -466,6 +466,7 @@ export class Shader {
         content: JSON.stringify({
           ...lastConfig,
           mode: "shader",
+          loop: false,
           shaderPath: path,
         }),
       });

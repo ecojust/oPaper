@@ -187,7 +187,7 @@ const handleLoopModeChange = async (value) => {
   console.log("Loop mode changed to:", value);
   corn && corn.stop();
   corn = null;
-  await saveConfig({ loop_mode: value });
+  await saveConfig({ loop_mode: value, mode: "static" });
   updateCorn();
 };
 
@@ -212,34 +212,31 @@ const updateCorn = () => {
   // ensure any existing corn is stopped before creating a new one
   corn && corn.stop();
   corn = null;
-
-  if (loopEnabled.value && config.value.mode === "static") {
-    corn = new IntervalCorn(() => {
-      if (!loopEnabled.value || config.value.mode !== "static") {
-        console.log("Loop不符合条件，即将关闭corn");
-        corn && corn.stop();
-        corn = null;
-        return;
+  corn = new IntervalCorn(() => {
+    if (!loopEnabled.value || config.value.mode !== "static") {
+      console.log("Loop不符合条件，即将关闭corn");
+      corn && corn.stop();
+      corn = null;
+      return;
+    }
+    if (isFecthingRandom.value) {
+      console.log("正在获取云端壁纸，跳过本次循环");
+      return;
+    }
+    if (loopMode.value === "local") {
+      const nextWallpaper =
+        wallpapers.value[Math.floor(Math.random() * wallpapers.value.length)];
+      if (nextWallpaper) {
+        selectWallpaper(nextWallpaper);
       }
-      if (isFecthingRandom.value) {
-        console.log("正在获取云端壁纸，跳过本次循环");
-        return;
-      }
-      if (loopMode.value === "local") {
-        const nextWallpaper =
-          wallpapers.value[Math.floor(Math.random() * wallpapers.value.length)];
-        if (nextWallpaper) {
-          selectWallpaper(nextWallpaper);
-        }
-        console.log("触发loop，从本地切换壁纸:", nextWallpaper);
-      } else {
-        console.log("触发loop，从云端切换壁纸:");
-        fetchRandomImage();
-      }
-    }, 5);
-    // start the underlying scheduler so the registered task runs
-    // corn.start();
-  }
+      console.log("触发loop，从本地切换壁纸:", nextWallpaper);
+    } else {
+      console.log("触发loop，从云端切换壁纸:");
+      fetchRandomImage();
+    }
+  }, 30);
+  // start the underlying scheduler so the registered task runs
+  // corn.start();
 };
 
 // read config
