@@ -30,17 +30,17 @@ const sendToIframe = (data) => {
 
 // 处理来自 iframe 的调用请求
 const handleInvoke = async (id, method, payload) => {
-  msg.value.push("invoke", method);
+  // msg.value.push("invoke", method);
 
   try {
     switch (method) {
       case "get_system_stats":
       case "open_executable":
-        msg.value.push("invoke", payload);
+        // msg.value.push("invoke", payload);
 
         const result = await invoke(method, payload || {});
 
-        msg.value.push("handleInvoke", result);
+        // msg.value.push("handleInvoke", result);
 
         // 返回结果给 iframe
         sendToIframe({
@@ -84,7 +84,7 @@ const handleMessage = async (event) => {
   }
   const data = event.data;
 
-  msg.value.push(data.method);
+  // msg.value.push(data.method);
 
   // 处理调用请求
   if (data && data.id && data.method) {
@@ -128,6 +128,9 @@ const initBackground = async () => {
     case "html":
       window.addEventListener("message", handleMessage);
 
+      msg.value.push("iframe");
+      msg.value.push(config.htmlPath);
+
       iframe = document.createElement("iframe");
       iframe.src = convertFileSrc(config.htmlPath);
       iframe.border = "none";
@@ -135,6 +138,8 @@ const initBackground = async () => {
         "width:100%;height:100%;display:block;border-width:0px;";
 
       parent.value.appendChild(iframe);
+      msg.value.push(iframe.src);
+
       break;
     default:
       console.warn("Unknown background type:", type);
@@ -166,7 +171,7 @@ onUnmounted(() => {
   /* border:1px solid red; */
   background: black;
   .log {
-    display: none;
+    // display: none;
   }
 }
 </style>

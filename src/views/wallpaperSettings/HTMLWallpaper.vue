@@ -72,7 +72,7 @@
                 <iframe
                   v-if="previewUrl"
                   ref="iframeRef"
-                  :src="previewUrl"
+                  :srcdoc="previewUrl"
                   class="html-preview"
                   sandbox="allow-scripts allow-same-origin"
                 ></iframe>
@@ -237,12 +237,8 @@ const initEditor = async () => {
 const previewHTML = async () => {
   previewing.value = true;
   try {
-    // 将当前代码保存到临时 Blob URL 进行预览
-    const blob = new Blob([currentHTML.value.code], { type: "text/html" });
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value);
-    }
-    previewUrl.value = URL.createObjectURL(blob);
+    // 直接使用HTML代码内容，通过srcdoc属性加载
+    previewUrl.value = currentHTML.value.code;
   } catch (e) {
     console.error("Preview failed:", e);
   } finally {
@@ -326,10 +322,7 @@ const setHTMLBackground = async (item) => {
 };
 
 const goBack = () => {
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value);
-    previewUrl.value = "";
-  }
+  previewUrl.value = "";
   view.value = "list";
   fetchList();
 };
@@ -344,9 +337,6 @@ onActivated(() => {
 });
 
 onBeforeUnmount(() => {
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value);
-  }
   window.removeEventListener("message", handleMessage);
 });
 </script>
