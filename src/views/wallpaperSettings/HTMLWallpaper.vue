@@ -237,9 +237,12 @@ const initEditor = async () => {
 const previewHTML = async () => {
   previewing.value = true;
   try {
-    // 使用 data URL 方式加载 HTML，避免 CSP 和特殊字符问题
-    const encodedHtml = encodeURIComponent(currentHTML.value.code);
-    previewUrl.value = `data:text/html;charset=utf-8,${encodedHtml}`;
+    // 将当前代码保存到临时 Blob URL 进行预览
+    const blob = new Blob([currentHTML.value.code], { type: "text/html" });
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value);
+    }
+    previewUrl.value = URL.createObjectURL(blob);
   } catch (e) {
     console.error("Preview failed:", e);
   } finally {
@@ -323,7 +326,10 @@ const setHTMLBackground = async (item) => {
 };
 
 const goBack = () => {
-  previewUrl.value = "";
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = "";
+  }
   view.value = "list";
   fetchList();
 };
@@ -338,6 +344,9 @@ onActivated(() => {
 });
 
 onBeforeUnmount(() => {
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
   window.removeEventListener("message", handleMessage);
 });
 </script>
