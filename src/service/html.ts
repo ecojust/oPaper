@@ -165,11 +165,21 @@ export class HTML {
     await invoke("create_animation_wallpaper");
   }
 
-  static async saveHTMLBackground(title: string, code: string) {
+  static async saveHTMLBackground(
+    title: string,
+    code: string,
+    thumbnail: string,
+  ) {
     try {
+      // thumbnail 是 base64 字符串，去掉前缀（如 "data:image/png;base64,"）
+      const base64Data = thumbnail.includes("base64,")
+        ? thumbnail.split("base64,")[1]
+        : thumbnail;
+
       const shaderPath = await invoke("save_wallpaper_html", {
         folderName: title,
         html: code,
+        thumbnail: base64Data,
       });
       console.log("html saved to:", shaderPath);
       return shaderPath;
@@ -199,7 +209,8 @@ export class HTML {
         id: `${folderPath}`,
         title: folderPath.split("/").pop() || `本地图片 ${index + 1}`,
 
-        // url: convertFileSrc(`${folderPath}/shader.glsl`),
+        thumbnail:
+          convertFileSrc(`${folderPath}/thumbnail.png`) + `?t=${cacheBuster}`,
         url: `${folderPath}/index.html`,
       }));
     } catch (e) {

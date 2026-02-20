@@ -197,6 +197,7 @@ const recompileShader = async () => {
 
 const saveShader = async () => {
   const base64Data = await babylonHandle.sceneShot();
+  console.log("saveShader", base64Data);
   await Shader.saveShaderBackground(
     currentShader.value.title,
     currentShader.value.code,

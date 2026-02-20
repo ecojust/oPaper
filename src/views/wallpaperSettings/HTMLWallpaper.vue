@@ -104,6 +104,7 @@ import { ArrowLeft, Plus } from "@element-plus/icons-vue";
 
 import { ElMessageBox } from "element-plus";
 import { sleep } from "@/utils/util";
+import html2canvas from "html2canvas";
 
 import { HTML, CodemirrorShaderEditor } from "@/service/html";
 
@@ -195,6 +196,7 @@ const fetchList = async () => {
 
 // 打开详情页
 const openDetail = async (item) => {
+  console.log("openDetail", item);
   currentHTML.value = item;
   currentHTML.value.code = await HTML.getHTMLContent(item.url);
   view.value = "detail";
@@ -254,9 +256,32 @@ const previewHTML = async () => {
 // 保存 HTML
 const saveHTML = async () => {
   try {
+    // 生成缩略图
+    let thumbnailBase64 = "";
+    if (iframeRef.value) {
+      try {
+        // 尝试捕获 iframe 内容
+        const iframeDoc =
+          iframeRef.value.contentDocument ||
+          iframeRef.value.contentWindow.document;
+        if (iframeDoc && iframeDoc.body) {
+          const canvas = await html2canvas(iframeDoc.body, {
+            backgroundColor: "#1a1a2e",
+            scale: 0.5, // 缩小比例，减少图片大小
+          });
+          thumbnailBase64 = canvas.toDataURL("image/png");
+        }
+      } catch (e) {
+        console.warn("Failed to generate thumbnail:", e);
+      }
+    }
+
+    console.log("savehtml", thumbnailBase64);
+
     await HTML.saveHTMLBackground(
       currentHTML.value.title,
       currentHTML.value.code,
+      thumbnailBase64,
     );
     ElMessageBox.alert("保存成功！", "提示", {
       confirmButtonText: "确定",

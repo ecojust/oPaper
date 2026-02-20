@@ -460,27 +460,250 @@ const builtinHTMLBackgrounds = [
   {
     title: "",
     code: `
-    
     <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>System Monitor</title>
-   
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 24px;
+        padding: 32px;
+        width: 380px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 28px;
+      }
+
+      .panel-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .panel-icon svg {
+        width: 28px;
+        height: 28px;
+        fill: white;
+      }
+
+      .panel-title {
+        color: white;
+        font-size: 22px;
+        font-weight: 600;
+      }
+
+      .panel-subtitle {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 13px;
+        margin-top: 2px;
+      }
+
+      .stat-item {
+        margin-bottom: 24px;
+      }
+
+      .stat-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .stat-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 15px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .stat-label svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+
+      .stat-value {
+        color: white;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .progress-bar {
+        height: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        border-radius: 5px;
+        transition: width 0.5s ease;
+      }
+
+      .progress-fill.cpu {
+        background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+      }
+
+      .progress-fill.memory {
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+      }
+
+      .stat-details {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .loading {
+        color: rgba(255, 255, 255, 0.6);
+        text-align: center;
+        padding: 40px;
+        font-size: 15px;
+      }
+
+      .error {
+        color: #ff6b6b;
+        text-align: center;
+        padding: 20px;
+        font-size: 14px;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .loading {
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+    </style>
   </head>
   <body>
     <div id="app">
-      <div class="loading">Loading system info...</div>
+      <!-- Loading State -->
+      <div id="loading" class="loading">Loading system info...</div>
+
+      <!-- Main Panel (Hidden until data loads) -->
+      <div id="panel" class="panel" style="display: none">
+        <div class="panel-header">
+          <div class="panel-icon">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm3-6c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"
+              />
+            </svg>
+          </div>
+          <div>
+            <div class="panel-title">System Monitor</div>
+            <div class="panel-subtitle">Real-time system statistics</div>
+          </div>
+        </div>
+
+        <!-- CPU Stats -->
+        <div class="stat-item">
+          <div class="stat-header">
+            <div class="stat-label">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"
+                />
+              </svg>
+              CPU Usage
+            </div>
+            <div class="stat-value" id="cpu-value">0.0%</div>
+          </div>
+          <div class="progress-bar">
+            <div
+              class="progress-fill cpu"
+              id="cpu-progress"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Memory Stats -->
+        <div class="stat-item">
+          <div class="stat-header">
+            <div class="stat-label">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z"
+                />
+              </svg>
+              Memory Usage
+            </div>
+            <div class="stat-value" id="memory-value">0.0%</div>
+          </div>
+          <div class="progress-bar">
+            <div
+              class="progress-fill memory"
+              id="memory-progress"
+              style="width: 0%"
+            ></div>
+          </div>
+          <div class="stat-details">
+            <span>Used: <span id="memory-used">0 MB</span></span>
+            <span>Total: <span id="memory-total">0 MB</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error State (Hidden by default) -->
+      <div id="error" class="error" style="display: none"></div>
     </div>
 
-
-    // region built-in sdk for 
+    <!-- Region built-sdk, please don't remove it!!!  -->
+    <!-- 内置的用于通信的sdk不要移除 -->
     <script>
       const pendingCallbacks = new Map();
 
       const generateId = () =>
-        "msg_"+Date.now()+"_"+Math.random().toString(36).substr(2, 9);
+        "msg_" + Date.now() + "_" + +Math.random().toString(36).substr(2, 9);
 
       window.addEventListener("message", (event) => {
         const data = event.data;
@@ -512,12 +735,101 @@ const builtinHTMLBackgrounds = [
         });
       }
     </script>
+    <!-- Endregion -->
 
-    
+    <script>
+      function formatBytes(mb) {
+        if (mb >= 1024) {
+          return (mb / 1024).toFixed(2) + " GB";
+        }
+        return mb + " MB";
+      }
+
+      // DOM elements cache
+      const elements = {
+        loading: document.getElementById("loading"),
+        panel: document.getElementById("panel"),
+        error: document.getElementById("error"),
+        cpuValue: document.getElementById("cpu-value"),
+        cpuProgress: document.getElementById("cpu-progress"),
+        memoryValue: document.getElementById("memory-value"),
+        memoryProgress: document.getElementById("memory-progress"),
+        memoryUsed: document.getElementById("memory-used"),
+        memoryTotal: document.getElementById("memory-total"),
+      };
+
+      function updatePanel(data) {
+        const {
+          cpu_usage_percent,
+          memory_used,
+          memory_total,
+          memory_usage_percent,
+        } = data;
+
+        // Update CPU
+        elements.cpuValue.textContent = cpu_usage_percent.toFixed(1) + "%";
+        elements.cpuProgress.style.width =
+          Math.min(cpu_usage_percent, 100) + "%";
+
+        // Update Memory
+        elements.memoryValue.textContent =
+          memory_usage_percent.toFixed(1) + "%";
+        elements.memoryProgress.style.width =
+          Math.min(memory_usage_percent, 100) + "%";
+        elements.memoryUsed.textContent = formatBytes(memory_used);
+        elements.memoryTotal.textContent = formatBytes(memory_total);
+      }
+
+      function showLoading() {
+        elements.loading.style.display = "block";
+        elements.panel.style.display = "none";
+        elements.error.style.display = "none";
+      }
+
+      function showPanel() {
+        elements.loading.style.display = "none";
+        elements.panel.style.display = "block";
+        elements.error.style.display = "none";
+      }
+
+      function showError(message) {
+        elements.loading.style.display = "none";
+        elements.panel.style.display = "none";
+        elements.error.style.display = "block";
+        elements.error.textContent = "Error: " + message;
+      }
+
+      async function updateStats() {
+        try {
+          const result = await invoke("get_system_stats");
+
+          if (result.code === 200) {
+            // First load - show panel
+            if (elements.loading.style.display !== "none") {
+              showPanel();
+            }
+            updatePanel(result.data);
+          } else {
+            showError(result.message || "Failed to get system info");
+          }
+        } catch (error) {
+          showError(error.message);
+        }
+      }
+
+      window.onload = async () => {
+        // Initial load
+        await updateStats();
+
+        // Refresh every 2 seconds
+        setInterval(updateStats, 2000);
+
+        // invoke("open_executable", { path: "/Applications/Google Chrome.app" });
+      };
+    </script>
   </body>
 </html>
 
-    
     `,
   },
 ];

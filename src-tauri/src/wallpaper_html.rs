@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 
+use base64::Engine;
+
 use crate::fs_helper::read_folder_folders;
 
 /// 删除 HTML 壁纸文件夹
@@ -84,7 +86,11 @@ pub fn write_wallpaper_html_file(folder_path: String, html: String) -> Result<()
 
 /// 保存 HTML 壁纸
 #[tauri::command]
-pub fn save_wallpaper_html(folder_name: String, html: String) -> Result<String, String> {
+pub fn save_wallpaper_html(
+    folder_name: String,
+    html: String,
+    thumbnail: Option<String>,
+) -> Result<String, String> {
     // 获取 appdata 目录下的 oPaper 路径
     let base_dir = dirs::data_dir()
         .ok_or("Failed to get data directory")?
@@ -92,21 +98,36 @@ pub fn save_wallpaper_html(folder_name: String, html: String) -> Result<String, 
 
     // 创建 wallpaper_html 目录
     let path = base_dir.join("wallpaper_html").join(&folder_name);
+
+    // 如果目录已存在，先删除旧的文件，确保覆盖
+    if path.exists() {
+        fs::remove_dir_all(&path)
+            .map_err(|e| format!("Failed to remove existing directory: {}", e))?;
+    }
+
     fs::create_dir_all(&path).map_err(|e| format!("Failed to create directory: {}", e))?;
 
     // 写入 index.html 文件
     let html_path = path.join("index.html");
     fs::write(&html_path, html).map_err(|e| format!("Failed to write HTML file: {}", e))?;
 
-    // 创建默认缩略图（简单的占位图）
+    // 保存缩略图
     let thumbnail_path = path.join("thumbnail.png");
-    if !thumbnail_path.exists() {
-        // 创建一个简单的默认缩略图
-        // 这里可以添加实际的缩略图生成逻辑
-        // 目前先创建一个空的占位文件
-        let default_thumbnail = create_default_thumbnail();
-        fs::write(&thumbnail_path, default_thumbnail)
-            .map_err(|e| format!("Failed to write thumbnail: {}", e))?;
+    match thumbnail {
+        Some(thumb) if !thumb.is_empty() => {
+            // 解码 base64 并保存为 PNG 文件
+            let thumbnail_bytes = base64::engine::general_purpose::STANDARD
+                .decode(&thumb)
+                .map_err(|e| format!("Failed to decode base64: {}", e))?;
+            fs::write(&thumbnail_path, thumbnail_bytes)
+                .map_err(|e| format!("Failed to write thumbnail: {}", e))?;
+        }
+        _ => {
+            // 使用默认缩略图
+            let default_thumbnail = create_default_thumbnail();
+            fs::write(&thumbnail_path, default_thumbnail)
+                .map_err(|e| format!("Failed to write thumbnail: {}", e))?;
+        }
     }
 
     Ok(path.to_string_lossy().to_string())
