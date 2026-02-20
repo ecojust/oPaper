@@ -5,7 +5,7 @@
         <el-tab-pane label="静态壁纸" name="static" />
         <el-tab-pane label="着色器壁纸" name="shader" />
         <!-- <el-tab-pane label="三维壁纸" name="3d" /> -->
-        <!-- <el-tab-pane label="在线壁纸" name="online" /> -->
+        <el-tab-pane label="网页壁纸" name="html" />
       </el-tabs>
     </div>
     <div class="stage-content">
@@ -21,7 +21,7 @@ import { ref, computed, onMounted } from "vue";
 import StaticWallpaper from "./wallpaperSettings/StaticWallpaper.vue";
 import ShaderWallpaper from "./wallpaperSettings/ShaderWallpaper.vue";
 import ThreeDWallpaper from "./wallpaperSettings/ThreeDWallpaper.vue";
-import OnlineWallpaper from "./wallpaperSettings/HTMLWallpaper.vue";
+import HTMLWallpaper from "./wallpaperSettings/HTMLWallpaper.vue";
 import Tool from "@/service/tool";
 
 const activeTab = ref("static");
@@ -30,7 +30,7 @@ const components = {
   static: StaticWallpaper,
   shader: ShaderWallpaper,
   "3d": ThreeDWallpaper,
-  online: OnlineWallpaper,
+  html: HTMLWallpaper,
 };
 
 const activeComponent = computed(() => components[activeTab.value] || null);

@@ -4,6 +4,7 @@ mod fetch;
 pub mod fs_helper;
 mod tool;
 mod wallpaper_animation;
+mod wallpaper_html;
 mod wallpaper_shader;
 mod wallpaper_static;
 
@@ -13,6 +14,10 @@ use fs_helper::{open_folder, read_file};
 use tool::{get_system_stats, open_executable};
 
 use wallpaper_animation::{create_animation_wallpaper, destroy_animation_wallpaper};
+use wallpaper_html::{
+    delete_wallpaper_html, read_wallpaper_html, read_wallpaper_html_file, save_wallpaper_html,
+    write_wallpaper_html_file,
+};
 use wallpaper_shader::{delete_wallpaper_shader, read_wallpaper_shader, save_wallpaper_shader};
 use wallpaper_static::{
     copy_wallpaper_to_wallpaper_static, delete_wallpaper_static, read_wallpaper_static,
@@ -52,6 +57,12 @@ pub fn run() {
             read_wallpaper_shader,
             delete_wallpaper_shader,
             save_wallpaper_shader,
+            // wallpaper_html
+            read_wallpaper_html,
+            delete_wallpaper_html,
+            save_wallpaper_html,
+            read_wallpaper_html_file,
+            write_wallpaper_html_file,
             // wallpaper_animation:shader
             create_animation_wallpaper,
             destroy_animation_wallpaper,

@@ -456,4 +456,70 @@ void main() {
   },
 ];
 
-export { builtinShaderBackgrounds };
+const builtinHTMLBackgrounds = [
+  {
+    title: "",
+    code: `
+    
+    <!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Monitor</title>
+   
+  </head>
+  <body>
+    <div id="app">
+      <div class="loading">Loading system info...</div>
+    </div>
+
+
+    // region built-in sdk for 
+    <script>
+      const pendingCallbacks = new Map();
+
+      const generateId = () =>
+        "msg_"+Date.now()+"_"+Math.random().toString(36).substr(2, 9);
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (data && data.id) {
+          const callback = pendingCallbacks.get(data.id);
+          if (callback) {
+            if (data.code === 200) {
+              callback.resolve(data);
+            } else {
+              callback.reject(new Error(data.msg));
+            }
+            pendingCallbacks.delete(data.id);
+          }
+          return;
+        }
+      });
+
+      async function invoke(data_type, payload) {
+        return new Promise((resolve, reject) => {
+          const id = generateId();
+          pendingCallbacks.set(id, { resolve, reject });
+          parent.postMessage({ id, method: data_type, payload }, "*");
+          setTimeout(() => {
+            if (pendingCallbacks.has(id)) {
+              pendingCallbacks.delete(id);
+              reject(new Error("Request timeout"));
+            }
+          }, 10000);
+        });
+      }
+    </script>
+
+    
+  </body>
+</html>
+
+    
+    `,
+  },
+];
+
+export { builtinShaderBackgrounds, builtinHTMLBackgrounds };
