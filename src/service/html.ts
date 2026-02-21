@@ -222,6 +222,50 @@ export class HTML {
       return [];
     }
   }
+
+  static async requestMessage(
+    iframe: HTMLIFrameElement,
+    type: string,
+    payload: Record<string, string>,
+  ) {
+    const pendingCallbacks = new Map();
+
+    const generateId = () =>
+      "msg_" + Date.now() + "_" + +Math.random().toString(36).substr(2, 9);
+
+    const callback = (event: any) => {
+      const data = event.data;
+      if (data && data.id) {
+        const callback = pendingCallbacks.get(data.id);
+        if (callback) {
+          pendingCallbacks.delete(data.id);
+          window.removeEventListener("message", callback);
+          if (data.code === 200) {
+            callback.resolve(data);
+          } else {
+            callback.reject(new Error(data.msg));
+          }
+        }
+        return;
+      }
+    };
+    window.addEventListener("message", callback);
+
+    return new Promise((resolve, reject) => {
+      const id = generateId();
+      pendingCallbacks.set(id, { resolve, reject });
+
+      iframe.contentWindow?.postMessage({ id, method: type, payload }, "*");
+
+      console.log("发出消息----", type);
+      setTimeout(() => {
+        if (pendingCallbacks.has(id)) {
+          pendingCallbacks.delete(id);
+          reject(new Error("Request timeout"));
+        }
+      }, 10000);
+    });
+  }
 }
 
 export default {

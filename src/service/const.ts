@@ -621,6 +621,46 @@ const builtinHTMLBackgrounds = [
       .loading {
         animation: pulse 1.5s ease-in-out infinite;
       }
+
+      .test-button {
+        margin-top: 20px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .test-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .test-button:active {
+        transform: translateY(0);
+      }
+
+      .click-feedback {
+        margin-top: 12px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        color: #4facfe;
+        font-size: 13px;
+        text-align: center;
+        display: none;
+      }
+
+      .click-feedback.show {
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -691,11 +731,21 @@ const builtinHTMLBackgrounds = [
             <span>Total: <span id="memory-total">0 MB</span></span>
           </div>
         </div>
+
+        <!-- Test Button for Click Event -->
+        <button class="test-button" id="test-button">
+          🧪 Test Click Event
+        </button>
+        <div class="click-feedback" id="click-feedback">
+          Click event triggered! 🎉
+        </div>
       </div>
 
       <!-- Error State (Hidden by default) -->
       <div id="error" class="error" style="display: none"></div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
     <!-- Region built-sdk, please don't remove it!!!  -->
     <!-- 内置的用于通信的sdk不要移除 -->
@@ -705,17 +755,54 @@ const builtinHTMLBackgrounds = [
       const generateId = () =>
         "msg_" + Date.now() + "_" + +Math.random().toString(36).substr(2, 9);
 
-      window.addEventListener("message", (event) => {
+      window.addEventListener("message", async (event) => {
         const data = event.data;
+
         if (data && data.id) {
           const callback = pendingCallbacks.get(data.id);
           if (callback) {
+            // 有回调，说明是响应消息
             if (data.code === 200) {
               callback.resolve(data);
             } else {
               callback.reject(new Error(data.msg));
             }
             pendingCallbacks.delete(data.id);
+          } else {
+            // 没有回调，说明是请求消息，需要处理
+            console.log("收到消息----", data.method);
+
+            // action from shell
+            switch (data.method) {
+              case "screenshot":
+                const canvas = await html2canvas(document.body, {
+                  backgroundColor: "#1a1a2e",
+                  scale: 0.5,
+                });
+                window.parent.postMessage(
+                  {
+                    id: data.id,
+                    method: data.method,
+                    code: 200,
+                    data: canvas.toDataURL("image/png"),
+                  },
+                  "*",
+                );
+                break;
+
+              default:
+                window.parent.postMessage(
+                  {
+                    id: data.id,
+                    method: data.method,
+                    code: 404,
+                    data: null,
+                    msg: "unknown method",
+                  },
+                  "*",
+                );
+                break;
+            }
           }
           return;
         }
@@ -756,6 +843,8 @@ const builtinHTMLBackgrounds = [
         memoryProgress: document.getElementById("memory-progress"),
         memoryUsed: document.getElementById("memory-used"),
         memoryTotal: document.getElementById("memory-total"),
+        testButton: document.getElementById("test-button"),
+        clickFeedback: document.getElementById("click-feedback"),
       };
 
       function updatePanel(data) {
@@ -825,6 +914,32 @@ const builtinHTMLBackgrounds = [
         setInterval(updateStats, 2000);
 
         // invoke("open_executable", { path: "/Applications/Google Chrome.app" });
+
+        // Test button click event
+        if (elements.testButton) {
+          elements.testButton.addEventListener("click", () => {
+            // Show feedback
+            elements.clickFeedback.classList.add("show");
+
+            // Log to console for debugging
+            console.log("Test button clicked! Click event is working.");
+
+            // Optional: Send event to backend
+            invoke("on_wallpaper_click", { source: "test-button" }).catch(
+              (err) => {
+                console.log(
+                  "Could not invoke on_wallpaper_click:",
+                  err.message,
+                );
+              },
+            );
+
+            // Hide feedback after 2 seconds
+            setTimeout(() => {
+              elements.clickFeedback.classList.remove("show");
+            }, 2000);
+          });
+        }
       };
     </script>
   </body>

@@ -283,25 +283,64 @@
       <div id="error" class="error" style="display: none"></div>
     </div>
 
+
     <!-- Region built-sdk, please don't remove it!!!  -->
     <!-- 内置的用于通信的sdk不要移除 -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script>
       const pendingCallbacks = new Map();
 
       const generateId = () =>
         "msg_" + Date.now() + "_" + +Math.random().toString(36).substr(2, 9);
 
-      window.addEventListener("message", (event) => {
+      window.addEventListener("message", async (event) => {
         const data = event.data;
+
         if (data && data.id) {
           const callback = pendingCallbacks.get(data.id);
           if (callback) {
+            // 有回调，说明是响应消息
             if (data.code === 200) {
               callback.resolve(data);
             } else {
               callback.reject(new Error(data.msg));
             }
             pendingCallbacks.delete(data.id);
+          } else {
+            // 没有回调，说明是请求消息，需要处理
+            console.log("收到消息----", data.method);
+
+            // action from shell
+            switch (data.method) {
+              case "screenshot":
+                const canvas = await html2canvas(document.body, {
+                  backgroundColor: "#1a1a2e",
+                  scale: 0.5,
+                });
+                window.parent.postMessage(
+                  {
+                    id: data.id,
+                    method: data.method,
+                    code: 200,
+                    data: canvas.toDataURL("image/png"),
+                  },
+                  "*",
+                );
+                break;
+
+              default:
+                window.parent.postMessage(
+                  {
+                    id: data.id,
+                    method: data.method,
+                    code: 404,
+                    data: null,
+                    msg: "unknown method",
+                  },
+                  "*",
+                );
+                break;
+            }
           }
           return;
         }
@@ -410,7 +449,7 @@
         await updateStats();
 
         // Refresh every 2 seconds
-        // setInterval(updateStats, 2000);
+        setInterval(updateStats, 2000);
 
         // invoke("open_executable", { path: "/Applications/Google Chrome.app" });
 
