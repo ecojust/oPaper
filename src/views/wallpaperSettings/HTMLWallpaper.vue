@@ -60,15 +60,24 @@
             </div>
 
             <div class="button-bar">
+              <div class="update-cover-switch">
+                <span class="switch-label">更新封面</span>
+                <el-switch v-model="updateCover" />
+              </div>
               <el-button @click="previewHTML" :loading="previewing">
                 预览
               </el-button>
+
               <el-button @click="saveHTML" type="primary">保存</el-button>
             </div>
           </div>
           <div class="detail">
-            <div class="left">
+            <div class="left" :class="{ 'full-width': isFullscreen }">
               <div class="preview-container">
+                <div class="fullscreen-btn" @click="toggleFullscreen">
+                  <el-icon v-if="!isFullscreen"><FullScreen /></el-icon>
+                  <el-icon v-else><Close /></el-icon>
+                </div>
                 <iframe
                   v-if="previewUrl"
                   ref="iframeRef"
@@ -81,7 +90,7 @@
                 </div>
               </div>
             </div>
-            <div class="right">
+            <div class="right" v-show="!isFullscreen">
               <div ref="monacoContainer" class="editor-container"></div>
             </div>
           </div>
@@ -99,8 +108,9 @@ import {
   ElInput,
   ElIcon,
   ElScrollbar,
+  ElSwitch,
 } from "element-plus";
-import { ArrowLeft, Plus } from "@element-plus/icons-vue";
+import { ArrowLeft, Plus, FullScreen, Close } from "@element-plus/icons-vue";
 
 import { ElMessageBox } from "element-plus";
 import { sleep } from "@/utils/util";
@@ -116,6 +126,7 @@ const monacoContainer = ref(null);
 const currentCode = ref("");
 const previewUrl = ref("");
 const previewing = ref(false);
+const updateCover = ref(true);
 let monacoEditor = null;
 
 const defaultCover =
@@ -124,6 +135,11 @@ const defaultCover =
 import { invoke } from "@tauri-apps/api/core";
 
 const iframeRef = ref(null);
+const isFullscreen = ref(false);
+
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value;
+};
 
 // 向 iframe 发送消息
 const sendToIframe = (data) => {
@@ -266,15 +282,18 @@ const previewHTML = async () => {
 // 保存 HTML
 const saveHTML = async () => {
   try {
-    const res = await HTML.requestMessage(iframeRef.value, "screenshot");
-    // thumbnailBase64 = png;
+    let thumbnail = "";
 
-    console.log("png", res.data);
+    if (updateCover.value) {
+      const res = await HTML.requestMessage(iframeRef.value, "screenshot");
+      thumbnail = res.data;
+      console.log("png", thumbnail);
+    }
 
     await HTML.saveHTMLBackground(
       currentHTML.value.title,
       currentHTML.value.code,
-      res.data,
+      thumbnail,
     );
 
     goBack();
@@ -507,7 +526,21 @@ onBeforeUnmount(() => {
 
         .button-bar {
           display: flex;
+          align-items: center;
           gap: 8px;
+
+          .update-cover-switch {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 8px;
+
+            .switch-label {
+              font-size: 13px;
+              color: #475569;
+              white-space: nowrap;
+            }
+          }
 
           .el-button {
             padding: 6px 14px;
@@ -560,6 +593,11 @@ onBeforeUnmount(() => {
             0 2px 4px -2px rgba(0, 0, 0, 0.2),
             inset 0 0 0 1px rgba(255, 255, 255, 0.05);
           position: relative;
+          transition: all 0.3s ease;
+
+          &.full-width {
+            flex: 1;
+          }
 
           &::before {
             content: "Preview";
@@ -578,6 +616,34 @@ onBeforeUnmount(() => {
           .preview-container {
             width: 100%;
             height: 100%;
+            position: relative;
+
+            .fullscreen-btn {
+              position: absolute;
+              top: 12px;
+              right: 12px;
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: rgba(0, 0, 0, 0.5);
+              border-radius: 6px;
+              cursor: pointer;
+              z-index: 20;
+              transition: all 0.2s ease;
+              color: rgba(255, 255, 255, 0.7);
+
+              &:hover {
+                background: rgba(102, 126, 234, 0.8);
+                color: white;
+                transform: scale(1.1);
+              }
+
+              .el-icon {
+                font-size: 16px;
+              }
+            }
 
             .html-preview {
               width: 100%;
